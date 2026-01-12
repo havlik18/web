@@ -7,50 +7,202 @@
   <title>Reporty dodavatelů — Lukáš Havel</title>
 
   <style>
-    :root { color-scheme: light dark; }
-    body { font-family: system-ui, -apple-system, "Segoe UI", Roboto, Arial, sans-serif; margin: 24px; line-height: 1.6; }
-    h1 { font-size: 24px; margin: 0 0 8px; }
-    .row { display: grid; grid-template-columns: 1fr; gap: 16px; }
-    @media (min-width: 900px) { .row { grid-template-columns: 300px 1fr; } }
-    .card { border: 1px solid #ddd; border-radius: 10px; padding: 16px; background: rgba(255,255,255,0.7); }
+    :root {
+      color-scheme: light dark;
+      --bg: #f7f9fc;
+      --bg-grad-1: #f7f9fc;
+      --bg-grad-2: #eef3fb;
+      --text: #1f2937;
+      --muted: #6b7280;
+      --card-bg: #ffffff;
+      --border: #e5e7eb;
+      --primary: #1565c0; /* modrá */
+      --primary-weak: rgba(21, 101, 192, 0.12);
+      --accent: #0fb9b1;  /* tyrkys */
+      --accent-weak: rgba(15, 185, 177, 0.12);
+      --warn: #ff7f0e;    /* oranžová */
+      --warn-weak: rgba(255, 127, 14, 0.12);
+      --shadow: 0 10px 24px rgba(31, 41, 55, 0.08);
+      --radius: 14px;
+    }
+    /* Tmavý režim (zapíná se přepínačem) */
+    .theme-dark {
+      --bg: #0f141b;
+      --bg-grad-1: #0f141b;
+      --bg-grad-2: #111a22;
+      --text: #e5e7eb;
+      --muted: #94a3b8;
+      --card-bg: #121924;
+      --border: #1f2937;
+      --primary: #4ea0ff;
+      --primary-weak: rgba(78, 160, 255, 0.16);
+      --accent: #54d5ce;
+      --accent-weak: rgba(84, 213, 206, 0.16);
+      --warn: #ffb74d;
+      --warn-weak: rgba(255, 183, 77, 0.18);
+      --shadow: 0 10px 28px rgba(0, 0, 0, 0.35);
+    }
+
+    html, body {
+      height: 100%;
+      background: linear-gradient(160deg, var(--bg-grad-1), var(--bg-grad-2));
+      color: var(--text);
+      font-family: system-ui, -apple-system, "Segoe UI", Roboto, Arial, sans-serif;
+      line-height: 1.6;
+    }
+    body { margin: 0; padding: 24px; }
+
+    /* Header */
+    .page-header {
+      display: grid;
+      grid-template-columns: 1fr auto;
+      align-items: center;
+      gap: 16px;
+      margin-bottom: 16px;
+    }
+    h1 {
+      font-size: clamp(22px, 3vw, 28px);
+      margin: 0;
+      letter-spacing: 0.2px;
+    }
+    .subtitle {
+      margin: 4px 0 0;
+      color: var(--muted);
+      font-size: 14px;
+    }
+    .btn {
+      display: inline-flex; align-items: center; gap: 8px;
+      padding: 10px 14px;
+      background: var(--primary);
+      color: #fff;
+      border: none; border-radius: 10px;
+      cursor: pointer; text-decoration: none;
+      box-shadow: var(--shadow);
+      transition: transform .08s ease, filter .2s ease;
+    }
+    .btn:hover { filter: brightness(1.08); }
+    .btn:active { transform: scale(0.98); }
+    .btn-outline {
+      background: transparent; color: var(--primary);
+      border: 1px solid var(--primary);
+    }
+
+    /* Layout */
+    .grid {
+      display: grid;
+      grid-template-columns: 1fr;
+      gap: 18px;
+    }
+    @media (min-width: 980px) {
+      .grid { grid-template-columns: 340px 1fr; }
+    }
+
+    .card {
+      background: var(--card-bg);
+      border: 1px solid var(--border);
+      border-radius: var(--radius);
+      box-shadow: var(--shadow);
+      padding: 16px;
+    }
+    .card h2 {
+      margin: 0 0 10px;
+      font-size: clamp(18px, 2.4vw, 22px);
+    }
+
+    /* Controls */
     label { font-weight: 600; display: block; margin-bottom: 6px; }
-    select, input[type="file"] { width: 100%; padding: 8px; }
-    table { width: 100%; border-collapse: collapse; margin-top: 12px; }
-    th, td { border: 1px solid #ddd; padding: 6px 8px; text-align: left; font-size: 14px; }
-    tfoot td { font-weight: 700; }
-    .muted { color: #666; font-size: 13px; }
-    canvas { background: rgba(255,255,255,0.7); border: 1px solid #ddd; border-radius: 10px; }
+    .control {
+      margin-bottom: 14px;
+    }
+    select, input[type="file"] {
+      width: 100%;
+      padding: 10px 12px;
+      border-radius: 10px;
+      border: 1px solid var(--border);
+      background: #fff;
+      color: var(--text);
+    }
+    .hint { color: var(--muted); font-size: 13px; }
+
+    /* Badge */
+    .badge {
+      display: inline-flex; align-items: center; gap: 6px;
+      padding: 6px 10px;
+      border-radius: 999px;
+      background: var(--accent-weak);
+      color: var(--text);
+      font-size: 12px;
+      border: 1px solid var(--accent);
+    }
+
+    /* Table */
+    table { width: 100%; border-collapse: collapse; margin-top: 10px; }
+    thead th {
+      background: var(--primary-weak);
+      color: var(--text);
+      border-bottom: 1px solid var(--border);
+      font-weight: 700;
+      padding: 8px 10px;
+    }
+    tbody td, tfoot td {
+      border-top: 1px solid var(--border);
+      padding: 8px 10px;
+      font-size: 14px;
+    }
+    tbody tr:hover { background: rgba(0,0,0,0.03); }
+
+    /* Chart container */
+    .chart-wrap {
+      border: 1px solid var(--border);
+      border-radius: var(--radius);
+      background: linear-gradient(160deg, var(--card-bg), #fff);
+      padding: 12px;
+    }
+
+    /* Footer */
+    footer { margin-top: 16px; color: var(--muted); font-size: 13px; }
+
+    /* Error */
     .error { color: #b00020; }
   </style>
 
-  <!-- LOKÁLNÍ KOPIE KNIHOVEN (z tvého repozitáře) -->
-  vendor/xlsx.full.min.js</script>
-  vendor/chart.umd.min.js</script>
+  <!-- Lokální knihovny z repozitáře -->
+  <script src="vendor/xlsx.full.min.jsendor/chart.umd.min.js</script>
 </head>
 <body>
-  <header style="margin-bottom:16px">
-    <h1>Reporty dodavatelů</h1>
-    <p class="muted">Nahraj Excel (.xls nebo .xlsx) se sloupci: A&nbsp;= Dodavatel, B&nbsp;= Datum, C&nbsp;= Počet zásilek, D&nbsp;= Obrat.</p>
-  </header>
+  <!-- HLAVÍČKA -->
+  <div class="page-header">
+    <div>
+      <h1>Reporty dodavatelů</h1>
+      <p class="subtitle">Nahraj Excel (.xls / .xlsx) — A: Dodavatel · B: Datum · C: Počet · D: Obrat</p>
+    </div>
+    <div style="display:flex;gap:8px">
+      <button id="toggle-theme" class="btn btn-outline" title="Přepnout světlý/tmavý režim">Tmavý / světlý</button>
+      #Export CSV</a>
+    </div>
+  </div>
 
-  <div class="row">
-    <!-- Ovládací panel -->
+  <!-- DVOJITÝ PANEL -->
+  <div class="grid">
+    <!-- Ovládání -->
     <aside class="card">
-      <div style="margin-bottom:12px">
+      <h2>Ovládací panel</h2>
+
+      <div class="control">
         <label for="file">1) Nahrát Excel soubor</label>
         <input type="file" id="file" accept=".xls,.xlsx" />
-        <div id="fileInfo" class="muted" style="margin-top:6px"></div>
+        <div id="fileInfo" class="hint" style="margin-top:6px"></div>
         <div id="error" class="error" style="margin-top:6px"></div>
       </div>
 
-      <div style="margin-bottom:12px">
-        <label for="supplier">2) Vyber dodavatele</label>
+      <div class="control">
+        <label for="supplier">2) Vyber dodavatele <span id="supBadge" class="badge" style="display:none;"></span></label>
         <select id="supplier" disabled>
           <option value="" selected>— nejprve nahraj soubor —</option>
         </select>
       </div>
 
-      <div style="margin-bottom:12px">
+      <div class="control">
         <label for="metric">3) Zobrazit metriky</label>
         <select id="metric">
           <option value="both" selected>Počet zásilek + Obrat</option>
@@ -59,264 +211,8 @@
         </select>
       </div>
 
-      <p class="muted">Tip: Pokud první řádek v Excelu obsahuje hlavičky, detekujeme je a vynecháme automaticky.</p>
+      <p class="hint">Tip: první řádek s textem považujeme za hlavičku a automaticky jej vynecháme.</p>
     </aside>
 
     <!-- Data + graf -->
     <main class="card">
-      <section>
-        <h2 style="margin:0 0 10px">Graf dodavatele</h2>
-        <canvas id="chart" height="120"></canvas>
-      </section>
-
-      <section style="margin-top:16px">
-        <h2 style="margin:0 0 10px">Tabulka dat</h2>
-        <div class="muted" id="tableInfo"></div>
-        <table id="table">
-          <thead>
-            <tr>
-              <th>Dodavatel</th>
-              <th>Datum</th>
-              <th>Počet zásilek</th>
-              <th>Obrat</th>
-            </tr>
-          </thead>
-          <tbody></tbody>
-          <tfoot>
-            <tr>
-              <td colspan="2">Součet</td>
-              <td id="sumShipments">0</td>
-              <td id="sumRevenue">0</td>
-            </tr>
-          </tfoot>
-        </table>
-      </section>
-    </main>
-  </div>
-
-  <footer style="margin-top:20px" class="muted">
-    © <span id="year"></span> Lukáš Havel
-  </footer>
-
-  <script>
-    // --- Pomocné formátování ---
-    const fmtInt = new Intl.NumberFormat('cs-CZ', { maximumFractionDigits: 0 });
-    const fmtCZK = new Intl.NumberFormat('cs-CZ', { style: 'currency', currency: 'CZK' });
-
-    // --- Stav ---
-    let allRows = [];   // { supplier, date: Date, shipments: number, revenue: number }
-    let suppliers = [];
-    let chart;          // Chart.js instance
-
-    // Excel serial -> Date
-    function excelSerialToDate(serial) {
-      const utcDays = serial - 25569;
-      return new Date(utcDays * 86400 * 1000);
-    }
-
-    // Nahrání souboru
-    document.getElementById('file').addEventListener('change', async (e) => {
-      resetUI();
-      const file = e.target.files?.[0];
-      if (!file) return;
-
-      document.getElementById('fileInfo').textContent = `Soubor: ${file.name} (${fmtInt.format(file.size)} B)`;
-
-      try {
-        const arrayBuffer = await file.arrayBuffer();
-        const wb = XLSX.read(arrayBuffer, { type: 'array', cellDates: true });
-        const sheetName = wb.SheetNames[0];
-        const ws = wb.Sheets[sheetName];
-
-        // Každý řádek jako pole (header:1)
-        const rows = XLSX.utils.sheet_to_json(ws, { header: 1, raw: true });
-
-        const startIdx = detectHeaderStart(rows);
-
-        allRows = [];
-        for (let i = startIdx; i < rows.length; i++) {
-          const r = rows[i];
-          if (!r || r.length < 4) continue;
-          const supplier = String(r[0] ?? '').trim();
-          let dateVal = r[1];
-          let shipments = Number(r[2]);
-          let revenue = Number(r[3]);
-
-          let date;
-          if (dateVal instanceof Date) {
-            date = dateVal;
-          } else if (typeof dateVal === 'number') {
-            date = excelSerialToDate(dateVal);
-          } else if (typeof dateVal === 'string') {
-            date = new Date(dateVal);
-          }
-
-          if (!supplier || isNaN(date?.getTime())) continue;
-
-          shipments = isNaN(shipments) ? 0 : shipments;
-          revenue = isNaN(revenue) ? 0 : revenue;
-
-          allRows.push({ supplier, date, shipments, revenue });
-        }
-
-        allRows.sort((a, b) => a.date - b.date);
-
-        suppliers = Array.from(new Set(allRows.map(r => r.supplier))).sort((a, b) => a.localeCompare(b, 'cs'));
-
-        // Naplnit select
-        const sel = document.getElementById('supplier');
-        sel.innerHTML = '<option value="">— vyber —</option>' + suppliers.map(s => `<option value="${escapeHtml(s)}">${escapeHtml(s)}</option>`).join('');
-        sel.disabled = suppliers.length === 0;
-
-        document.getElementById('tableInfo').textContent =
-          `Načteno řádků: ${fmtInt.format(allRows.length)} · Dodavatelů: ${fmtInt.format(suppliers.length)} · List: ${sheetName}`;
-
-      } catch (err) {
-        console.error(err);
-        document.getElementById('error').textContent =
-          'Nepodařilo se načíst soubor. Zkontroluj, že jde o XLS/XLSX s požadovanými sloupci (A–D).';
-      }
-    });
-
-    // Události UI
-    document.getElementById('supplier').addEventListener('change', renderView);
-    document.getElementById('metric').addEventListener('change', renderView);
-
-    function renderView() {
-      const supplier = document.getElementById('supplier').value;
-      if (!supplier) return;
-
-      const rows = allRows.filter(r => r.supplier === supplier);
-
-      // Tabulka
-      const tbody = document.querySelector('#table tbody');
-      tbody.innerHTML = rows.map(r => `
-        <tr>
-          <td>${escapeHtml(r.supplier)}</td>
-          <td>${toISO(r.date)}</td>
-          <td style="text-align:right">${fmtInt.format(r.shipments)}</td>
-          <td style="text-align:right">${fmtCZK.format(r.revenue)}</td>
-        </tr>
-      `).join('');
-
-      const sumShipments = rows.reduce((acc, r) => acc + r.shipments, 0);
-      const sumRevenue = rows.reduce((acc, r) => acc + r.revenue, 0);
-      document.getElementById('sumShipments').textContent = fmtInt.format(sumShipments);
-      document.getElementById('sumRevenue').textContent = fmtCZK.format(sumRevenue);
-
-      // Agregace po dnech
-      const byDateMap = new Map(); // key: YYYY-MM-DD
-      for (const r of rows) {
-        const d = toISO(r.date);
-        const prev = byDateMap.get(d) || { shipments: 0, revenue: 0 };
-        prev.shipments += r.shipments;
-        prev.revenue += r.revenue;
-        byDateMap.set(d, prev);
-      }
-      const labels = Array.from(byDateMap.keys()).sort();
-      const seriesShip = labels.map(d => byDateMap.get(d).shipments);
-      const seriesRev = labels.map(d => byDateMap.get(d).revenue);
-
-      // Datové sady podle výběru
-      const metric = document.getElementById('metric').value;
-      const datasets = [];
-      if (metric === 'both' || metric === 'shipments') {
-        datasets.push({
-          label: 'Počet zásilek',
-          data: seriesShip,
-          borderColor: '#0a66c2',
-          backgroundColor: 'rgba(10,102,194,0.15)',
-          tension: 0.2,
-          yAxisID: 'yShip'
-        });
-      }
-      if (metric === 'both' || metric === 'revenue') {
-        datasets.push({
-          label: 'Obrat (Kč)',
-          data: seriesRev,
-          borderColor: '#ff7f0e',
-          backgroundColor: 'rgba(255,127,14,0.15)',
-          tension: 0.2,
-          yAxisID: 'yRev'
-        });
-      }
-
-      const ctx = document.getElementById('chart');
-      if (chart) chart.destroy();
-      chart = new Chart(ctx, {
-        type: 'line',
-        data: { labels, datasets },
-        options: {
-          responsive: true,
-          interaction: { mode: 'index', intersect: false },
-          plugins: {
-            legend: { position: 'top' },
-            tooltip: {
-              callbacks: {
-                label: (item) => {
-                  if (item.dataset.label.includes('Obrat')) {
-                    return `${item.dataset.label}: ${fmtCZK.format(item.parsed.y)}`;
-                  }
-                  return `${item.dataset.label}: ${fmtInt.format(item.parsed.y)}`;
-                }
-              }
-            }
-          },
-          scales: {
-            x: { title: { text: 'Datum', display: true } },
-            yShip: {
-              type: 'linear',
-              position: 'left',
-              title: { text: 'Počet zásilek', display: true },
-              grid: { drawOnChartArea: true }
-            },
-            yRev: {
-              type: 'linear',
-              position: 'right',
-              title: { text: 'Obrat (Kč)', display: true },
-              grid: { drawOnChartArea: false }
-            }
-          }
-        }
-      });
-    }
-
-    // Detekce hlavičky (první řádek)
-    function detectHeaderStart(rows) {
-      if (!rows.length) return 0;
-      const first = rows[0];
-      const looksHeader =
-        first && first.length >= 4 &&
-        (typeof first[2] !== 'number' || typeof first[3] !== 'number');
-      return looksHeader ? 1 : 0;
-    }
-
-    // Pomocné funkce
-    function toISO(d) {
-      const yyyy = d.getFullYear();
-      const mm = String(d.getMonth() + 1).padStart(2, '0');
-      const dd = String(d.getDate()).padStart(2, '0');
-      return `${yyyy}-${mm}-${dd}`;
-    }
-    function escapeHtml(s) {
-      return String(s)
-        .replaceAll('&', '&amp;')
-        .replaceAll('<', '&lt;')
-        .replaceAll('>', '&gt;')
-        .replaceAll('"', '&quot;')
-        .replaceAll("'", '&#39;');
-    }
-    function resetUI() {
-      document.getElementById('error').textContent = '';
-      document.getElementById('supplier').innerHTML = '<option value="">— vyber —</option>';
-      document.getElementById('supplier').disabled = true;
-      document.querySelector('#table tbody').innerHTML = '';
-      document.getElementById('sumShipments').textContent = '0';
-      document.getElementById('sumRevenue').textContent = fmtCZK.format(0);
-      if (chart) { chart.destroy(); chart = null; }
-    }
-
-    document.getElementById('year').textContent = new Date().getFullYear();
-  </script>
-</body>
-</html>
