@@ -4,43 +4,93 @@
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1" />
-  <title>Můj jednoduchý web</title>
+  <title>Lukáš Havel | Prezentační stránka</title>
   <style>
-    body { font-family: system-ui, -apple-system, "Segoe UI", Roboto, Arial, sans-serif; margin: 40px; line-height: 1.5; }
+    :root { color-scheme: light dark; }
+    body { font-family: system-ui, -apple-system, "Segoe UI", Roboto, Arial, sans-serif; margin: 40px; line-height: 1.6; }
     header { margin-bottom: 24px; }
-    h1 { font-size: 28px; margin: 0 0 8px; }
-    .card { border: 1px solid #ddd; border-radius: 8px; padding: 16px; margin-bottom: 12px; }
-    .card h3 { margin: 0 0 8px; }
+    h1 { font-size: 28px; margin: 0 0 6px; }
+    h2 { font-size: 22px; margin: 24px 0 12px; }
     .grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(240px, 1fr)); gap: 12px; }
+    .card { border: 1px solid #ddd; border-radius: 10px; padding: 16px; background: rgba(255,255,255,0.7); backdrop-filter: blur(2px); }
+    .card h3 { margin: 0 0 8px; }
     footer { margin-top: 32px; font-size: 13px; color: #666; }
-    .btn { display: inline-block; padding: 8px 12px; background: #0a66c2; color: #fff; border-radius: 6px; text-decoration: none; }
+    .btn { display: inline-block; padding: 10px 14px; background: #0a66c2; color: #fff; border-radius: 6px; text-decoration: none; cursor: pointer; }
     .btn:hover { background: #094f96; }
+    nav { margin: 12px 0 24px; }
+    nav .btn { margin-right: 12px; }
+    img.responsive { max-width: 100%; height: auto; border-radius: 8px; }
+    /* Modal */
+    .modal-backdrop { position: fixed; inset: 0; background: rgba(0,0,0,0.5); display: none; align-items: center; justify-content: center; }
+    .modal { background: #fff; color: #000; width: min(560px, 90vw); border-radius: 12px; padding: 20px; box-shadow: 0 10px 30px rgba(0,0,0,0.3); }
+    .modal header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 12px; }
+    .close { background: transparent; border: none; font-size: 20px; cursor: pointer; }
+    /* Přepínač tématu (světlé/tmavé) */
+    .theme-toggle { margin-left: 8px; background: #444; }
+    .theme-toggle:hover { background: #222; }
+    /* Akordeon */
+    .accordion-item { border: 1px solid #ddd; border-radius: 8px; margin-bottom: 8px; overflow: hidden; }
+    .accordion-header { background: #f7f7f7; padding: 10px 12px; cursor: pointer; }
+    .accordion-content { display: none; padding: 12px; }
   </style>
 </head>
 <body>
   <header>
-    <h1>Název projektu</h1>
-    <p>Krátký popis webu – co tu návštěvník najde.</p>
-    #nabidkaPřejít na nabídku</a>
+    <h1>Lukáš Havel – Business Development</h1>
+    <p>Prezentační stránka s nabídkou a kontakty. Funkční tlačítka bez backendu.</p>
+    <nav>
+      #nabidkaNabídka</a>
+      #kontaktKontakt</a>
+      <button class="btn" id="scroll-cta">Rychlý kontakt</button>
+      <button class="btn theme-toggle" id="toggle-theme">Tmavý/světlý režim</button>
+    </nav>
   </header>
 
-  <!-- JSON data vložená přímo v HTML -->
+  <!-- JSON data -->
   <script type="application/json" id="data-json">
   {
+    "hero": {
+      "obrazek": "images/hero.jpg",
+      "nadpis": "Pomáhám firmám růst",
+      "popis": "Validace trhu, akvizice partnerů, obchodní pipeline."
+    },
     "nabidka": [
-      { "nazev": "Produkt A", "popis": "Popis produktu A", "cena": "990 Kč" },
-      { "nazev": "Produkt B", "popis": "Popis produktu B", "cena": "1 490 Kč" },
-      { "nazev": "Služba C", "popis": "Popis služby C", "cena": "Na dotaz" }
+      { "nazev": "Audit obchodní pipeline", "popis": "Analýza procesu od leadu po uzavření.", "cena": "Na dotaz" },
+      { "nazev": "Go-to-market konzultace", "popis": "Strategie vstupu na nový trh.", "cena": "Na dotaz" },
+      { "nazev": "Workshop BD tým", "popis": "Metodika, skripty, nástroje, reporting.", "cena": "Na dotaz" }
     ],
     "kontakt": {
-      "firma": "Vaše firma s.r.o.",
-      "email": "info@vasefirma.cz",
-      "telefon": "+420 123 456 789"
+      "jmeno": "Lukáš Havel",
+      "email": "lukas.havel@example.com",
+      "telefon": "+420 123 456 789",
+      "linkedin": "https://www.linkedin.com/in/vasprofil"
     }
   }
   </script>
 
   <main>
+    <section id="hero">
+      <h2 id="hero-title"></h2>
+      <p id="hero-desc"></p>
+      <img id="hero-img" class="responsive" alt="Ilustrační obrázek" />
+      <div style="margin-top:12px">
+        <button class="btn" id="open-modal">Více informací</button>
+        <a class="btn" id="download-bžuru (PDF)</a>
+      </div>
+    </section>
+
+    <section id="faq">
+      <h2>Časté dotazy</h2>
+      <div class="accordion-item">
+        <div class="accordion-header">Jak probíhá spolupráce?</div>
+        <div class="accordion-content">Úvodní call, analýza, návrh plánu, iterace a reporting.</div>
+      </div>
+      <div class="accordion-item">
+        <div class="accordion-header">Je možné pilotní projekt?</div>
+        <div class="accordion-content">Ano, typicky 2–4 týdny, jasná kritéria úspěchu.</div>
+      </div>
+    </section>
+
     <section id="nabidka">
       <h2>Nabídka</h2>
       <div class="grid" id="nabidka-grid"></div>
@@ -49,19 +99,43 @@
     <section id="kontakt">
       <h2>Kontakt</h2>
       <div class="card" id="kontakt-card"></div>
+      <div style="margin-top:12px">
+        <a class="btn" id="email-btn">Napsat e‑mail</a>
+        <a class="btn" id="tel-btn">Zavolat</a>
+        <button class="btn" id="copy-email">Zkopírovat e‑mail</button>
+        <button class="btn" id="copy-tel">Zkopírovat telefon</button>
+      </div>
     </section>
   </main>
 
   <footer>
-    © <span id="year"></span> Vaše firma — Všechna práva vyhrazena.
+    © <span id="year"></span> Lukáš Havel — Všechna práva vyhrazena.
   </footer>
 
-  <script>
-    // Načtení JSON dat vložených v <script type="application/json">
-    const raw = document.getElementById('data-json').textContent;
-    const data = JSON.parse(raw);
+  <!-- Modal -->
+  <div class="modal-backdrop" id="modal-backdrop" role="dialog" aria-modal="true" aria-hidden="true">
+    <div class="modal" role="document">
+      <header>
+        <strong>Více informací</strong>
+        <button class="close" id="close-modal" aria-label="Zavřít">✕</button>
+      </header>
+      <p>Nabízím konzultace a workshopy zaměřené na růst a partnerství. Ozvěte se — připravím návrh na míru.</p>
+      <div style="text-align:right; margin-top:12px">
+        <button class="btn" id="modal-contact">Kontaktovat</button>
+      </div>
+    </div>
+  </div>
 
-    // Vykreslení nabídky
+  <script>
+    // Načtení JSON dat
+    const data = JSON.parse(document.getElementById('data-json').textContent);
+
+    // Hero
+    document.getElementById('hero-title').textContent = data.hero.nadpis;
+    document.getElementById('hero-desc').textContent = data.hero.popis;
+    document.getElementById('hero-img').src = data.hero.obrazek;
+
+    // Nabídka
     const grid = document.getElementById('nabidka-grid');
     data.nabidka.forEach(item => {
       const div = document.createElement('div');
@@ -70,18 +144,86 @@
         <h3>${item.nazev}</h3>
         <p>${item.popis}</p>
         <strong>${item.cena}</strong>
+        <div style="margin-top:8px">
+          <button class="btn btn-small    contactKontaktovat</button>
+        </div>
       `;
       grid.appendChild(div);
     });
 
-    // Vykreslení kontaktu
+    // Kontakt
     const k = data.kontakt;
     const kontaktDiv = document.getElementById('kontakt-card');
     kontaktDiv.innerHTML = `
-      <p><strong>${k.firma}</strong></p>
-      <p>E-mail: <a href="mailto:${kk.email}</a></p>
-      <p>Telefon: <a href="tel:${k.telece(/\\s+/g,${k.telefon}</a></p>
+      <p><strong>${k.jmeno}</strong></p>
+      <p>E-mail: mailto:${k.email}${k.email}</a></p>
+      <p>Telefon: tel:${k.telefon.replace(/\\s+/g,${k.telefon}</a></p>
+      <p>LinkedIn: ${k.linkedin}${k.linkedin}</a></p>
     `;
+
+    // Funkční tlačítka – e‑mail, telefon, kopírování
+    document.getElementById('email-btn').href = `mailto:${k.email}?subject=Poptávka&body=Dobrý den, rád bych...`;
+    document.getElementById('tel-btn').href = `tel:${k.telefon.replace(/\\s+/g,'')}`;
+    document.getElementById('copy-email').addEventListener('click', async () => {
+      await navigator.clipboard.writeText(k.email);
+      alert('E‑mail zkopírován do schránky.');
+    });
+    document.getElementById('copy-tel').addEventListener('click', async () => {
+      await navigator.clipboard.writeText(k.telefon);
+      alert('Telefon zkopírován do schránky.');
+    });
+
+    // CTA – plynulý scroll na kontakt
+    document.getElementById('scroll-cta').addEventListener('click', () => {
+      document.getElementById('kontakt').scrollIntoView({ behavior: 'smooth' });
+    });
+
+    // Modal – otevření/zavření
+    const modalBackdrop = document.getElementById('modal-backdrop');
+    document.getElementById('open-modal').addEventListener('click', () => {
+      modalBackdrop.style.display = 'flex';
+      modalBackdrop.setAttribute('aria-hidden', 'false');
+    });
+    document.getElementById('close-modal').addEventListener('click', closeModal);
+    modalBackdrop.addEventListener('click', (e) => { if (e.target === modalBackdrop) closeModal(); });
+    function closeModal() {
+      modalBackdrop.style.display = 'none';
+      modalBackdrop.setAttribute('aria-hidden', 'true');
+    }
+    document.getElementById('modal-contact').addEventListener('click', () => {
+      window.location.href = `mailto:${k.email}?subject=Zájem o spolupráci`;
+    });
+
+    // Přepínač tématu – jednoduché (přepíná třídu na body)
+    const toggleBtn = document.getElementById('toggle-theme');
+    let dark = false;
+    toggleBtn.addEventListener('click', () => {
+      dark = !dark;
+      document.body.style.background = dark ? '#111' : '';
+      document.body.style.color = dark ? '#eee' : '';
+    });
+
+    // Akordeon – FAQ
+    document.querySelectorAll('.accordion-header').forEach(h => {
+      h.addEventListener('click', () => {
+        const content = h.nextElementSibling;
+        const visible = content.style.display === 'block';
+        content.style.display = visible ? 'none' : 'block';
+      });
+    });
+
+    // Tlačítka v kartách nabídky – ukázková akce
+    grid.addEventListener('click', (e) => {
+      const btn = e.target.closest('button[data-action]');
+      if (!btn) return;
+      const card = btn.closest('.card');
+      const title = card.querySelector('h3').textContent;
+      if (btn.dataset.action === 'detail') {
+        alert(`Detail: ${title}`);
+      } else if (btn.dataset.action === 'contact') {
+        window.location.href = `mailto:${k.email}?subject=Poptávka: ${encodeURIComponent(title)}`;
+      }
+    });
 
     // Rok ve footeru
     document.getElementById('year').textContent = new Date().getFullYear();
