@@ -1,0 +1,90 @@
+
+<!DOCTYPE html>
+<html lang="cs">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>Můj jednoduchý web</title>
+  <style>
+    body { font-family: system-ui, -apple-system, "Segoe UI", Roboto, Arial, sans-serif; margin: 40px; line-height: 1.5; }
+    header { margin-bottom: 24px; }
+    h1 { font-size: 28px; margin: 0 0 8px; }
+    .card { border: 1px solid #ddd; border-radius: 8px; padding: 16px; margin-bottom: 12px; }
+    .card h3 { margin: 0 0 8px; }
+    .grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(240px, 1fr)); gap: 12px; }
+    footer { margin-top: 32px; font-size: 13px; color: #666; }
+    .btn { display: inline-block; padding: 8px 12px; background: #0a66c2; color: #fff; border-radius: 6px; text-decoration: none; }
+    .btn:hover { background: #094f96; }
+  </style>
+</head>
+<body>
+  <header>
+    <h1>Název projektu</h1>
+    <p>Krátký popis webu – co tu návštěvník najde.</p>
+    #nabidkaPřejít na nabídku</a>
+  </header>
+
+  <!-- JSON data vložená přímo v HTML -->
+  <script type="application/json" id="data-json">
+  {
+    "nabidka": [
+      { "nazev": "Produkt A", "popis": "Popis produktu A", "cena": "990 Kč" },
+      { "nazev": "Produkt B", "popis": "Popis produktu B", "cena": "1 490 Kč" },
+      { "nazev": "Služba C", "popis": "Popis služby C", "cena": "Na dotaz" }
+    ],
+    "kontakt": {
+      "firma": "Vaše firma s.r.o.",
+      "email": "info@vasefirma.cz",
+      "telefon": "+420 123 456 789"
+    }
+  }
+  </script>
+
+  <main>
+    <section id="nabidka">
+      <h2>Nabídka</h2>
+      <div class="grid" id="nabidka-grid"></div>
+    </section>
+
+    <section id="kontakt">
+      <h2>Kontakt</h2>
+      <div class="card" id="kontakt-card"></div>
+    </section>
+  </main>
+
+  <footer>
+    © <span id="year"></span> Vaše firma — Všechna práva vyhrazena.
+  </footer>
+
+  <script>
+    // Načtení JSON dat vložených v <script type="application/json">
+    const raw = document.getElementById('data-json').textContent;
+    const data = JSON.parse(raw);
+
+    // Vykreslení nabídky
+    const grid = document.getElementById('nabidka-grid');
+    data.nabidka.forEach(item => {
+      const div = document.createElement('div');
+      div.className = 'card';
+      div.innerHTML = `
+        <h3>${item.nazev}</h3>
+        <p>${item.popis}</p>
+        <strong>${item.cena}</strong>
+      `;
+      grid.appendChild(div);
+    });
+
+    // Vykreslení kontaktu
+    const k = data.kontakt;
+    const kontaktDiv = document.getElementById('kontakt-card');
+    kontaktDiv.innerHTML = `
+      <p><strong>${k.firma}</strong></p>
+      <p>E-mail: <a href="mailto:${kk.email}</a></p>
+      <p>Telefon: <a href="tel:${k.telece(/\\s+/g,${k.telefon}</a></p>
+    `;
+
+    // Rok ve footeru
+    document.getElementById('year').textContent = new Date().getFullYear();
+  </script>
+</body>
+</html>
