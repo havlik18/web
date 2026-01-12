@@ -4,78 +4,52 @@
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1" />
-  <title>Reporty dodavatelů — Lukáš Havel (test + graf)</title>
+  <title>Reporty dodavatelů — Lukáš Havel (filtr datumu + graf)</title>
 
   <style>
     :root {
       color-scheme: light dark;
-      --bg: #f7f9fc;
-      --bg2: #eef3fb;
-      --text: #1f2937;
-      --muted: #6b7280;
-      --card: #ffffff;
-      --border: #e5e7eb;
-      --primary: #1565c0;
-      --primary-weak: rgba(21,101,192,0.12);
-      --warn: #ff7f0e;
-      --warn-weak: rgba(255,127,14,0.12);
-      --radius: 14px;
-      --shadow: 0 10px 24px rgba(31,41,55,.08);
+      --bg: #f7f9fc; --bg2: #eef3fb; --text: #1f2937; --muted: #6b7280;
+      --card: #ffffff; --border: #e5e7eb; --primary: #1565c0; --primary-weak: rgba(21,101,192,0.12);
+      --warn: #ff7f0e; --warn-weak: rgba(255,127,14,0.12);
+      --radius: 14px; --shadow: 0 10px 24px rgba(31,41,55,.08);
     }
-    html, body {
-      height: 100%;
-      background: linear-gradient(160deg, var(--bg), var(--bg2));
-      color: var(--text);
-      font-family: system-ui, -apple-system, "Segoe UI", Roboto, Arial, sans-serif;
-      line-height: 1.6;
-      margin: 0;
-    }
+    html, body { height: 100%; background: linear-gradient(160deg, var(--bg), var(--bg2)); color: var(--text);
+      font-family: system-ui,-apple-system,"Segoe UI",Roboto,Arial,sans-serif; line-height: 1.6; margin: 0; }
     header { padding: 20px 24px 8px; }
     h1 { margin: 0; font-size: clamp(22px, 3vw, 28px); }
     .hint { color: var(--muted); font-size: 13px; margin: 6px 0 0; }
-
-    .grid {
-      display: grid;
-      grid-template-columns: 1fr;
-      gap: 18px;
-      padding: 0 24px 24px;
-    }
-    @media (min-width: 980px) { .grid { grid-template-columns: 340px 1fr; } }
-
-    .card {
-      background: var(--card);
-      border: 1px solid var(--border);
-      border-radius: var(--radius);
-      box-shadow: var(--shadow);
-      padding: 16px;
-    }
+    .grid { display: grid; grid-template-columns: 1fr; gap: 18px; padding: 0 24px 24px; }
+    @media (min-width: 980px) { .grid { grid-template-columns: 360px 1fr; } }
+    .card { background: var(--card); border: 1px solid var(--border); border-radius: var(--radius); box-shadow: var(--shadow); padding: 16px; }
     .card h2 { margin: 0 0 10px; font-size: clamp(18px,2.2vw,22px); }
-
     label { font-weight: 600; display: block; margin-bottom: 6px; }
-    select, input[type="file"] {
-      width: 100%; padding: 10px 12px;
-      border-radius: 10px; border: 1px solid var(--border); background: #fff;
-    }
+    select, input[type="file"], input[type="date"] { width: 100%; padding: 10px 12px; border-radius: 10px; border: 1px solid var(--border); background: #fff; }
+    .row { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; }
+    .btn { display: inline-block; padding: 8px 12px; border-radius: 10px; border: 1px solid var(--border); background: #fff; cursor: pointer; }
+    .btn-primary { background: var(--primary); color: #fff; border-color: var(--primary); }
     table { width: 100%; border-collapse: collapse; margin-top: 10px; }
     thead th { background: var(--primary-weak); padding: 8px 10px; border-bottom: 1px solid var(--border); }
     tbody td, tfoot td { border-top: 1px solid var(--border); padding: 8px 10px; font-size: 14px; }
     tbody tr:hover { background: rgba(0,0,0,0.03); }
     .error { color: #b00020; }
-    .ok    { color: #1565c0; font-weight: 600; }
+    .ok { color: #1565c0; font-weight: 600; }
     .chart-wrap { border: 1px solid var(--border); border-radius: var(--radius); padding: 12px; background: #fff; }
   </style>
 </head>
 <body>
   <header>
-    <h1>Reporty dodavatelů — test načtení knihoven + graf</h1>
-    <p class="hint">Nejdříve ověříme, že jsou načtené knihovny (SheetJS + Chart.js). Pak můžeš nahrát Excel.</p>
+    <h1>Reporty dodavatelů — filtr datumu + graf</h1>
+    <p class="hint">Nejdřív ověříme načtení knihoven (SheetJS + Chart.js). Potom nahraj Excel a filtruj podle dodavatele a období.</p>
     <p id="libStatus" class="hint"></p>
   </header>
 
   <div class="grid">
+    <!-- Ovládání -->
     <aside class="card">
       <h2>Ovládací panel</h2>
 
+      <!-- Nahrání souboru -->
       <div class="control">
         <label for="file">1) Nahrát Excel (.xls / .xlsx)</label>
         <input type="file" id="file" accept=".xls,.xlsx" />
@@ -83,6 +57,7 @@
         <div id="error" class="error" style="margin-top:6px"></div>
       </div>
 
+      <!-- Dodavatel -->
       <div class="control">
         <label for="supplier">2) Vyber dodavatele</label>
         <select id="supplier" disabled>
@@ -90,8 +65,29 @@
         </select>
       </div>
 
+      <!-- Filtr datumu (od–do) -->
       <div class="control">
-        <label for="metric">3) Zobrazit metriky</label>
+        <label>3) Filtr období</label>
+        <div class="row">
+          <div>
+            <label for="dateFrom" style="font-weight:500">Datum od</label>
+            <input type="date" id="dateFrom" />
+          </div>
+          <div>
+            <label for="dateTo" style="font-weight:500">Datum do</label>
+            <input type="date" id="dateTo" />
+          </div>
+        </div>
+        <div style="margin-top:8px; display:flex; gap:8px;">
+          <button id="applyFilterBtn" class="btn btn-primary">Použít filtr</button>
+          <button id="clearFilterBtn" class="btn">Vyčistit filtr</button>
+        </div>
+        <div id="filterInfo" class="hint" style="margin-top:6px"></div>
+      </div>
+
+      <!-- Metriky -->
+      <div class="control">
+        <label for="metric">4) Zobrazit metriky</label>
         <select id="metric">
           <option value="both" selected>Počet zásilek + Obrat</option>
           <option value="shipments">Pouze počet zásilek</option>
@@ -99,9 +95,10 @@
         </select>
       </div>
 
-      <p class="hint">Pokud první řádek jsou hlavičky, automaticky je přeskočíme.</p>
+      <p class="hint">Pozn.: Pokud první řádek jsou hlavičky, automaticky je přeskočíme.</p>
     </aside>
 
+    <!-- Data + graf -->
     <main class="card">
       <h2>Graf dodavatele</h2>
       <div class="chart-wrap"><canvas id="chart" height="140"></canvas></div>
@@ -129,3 +126,36 @@
     </main>
   </div>
 
+  <!-- Lokální knihovny z repozitáře -->
+  <script src="/web/vendor/xlsx.full.min.js"
+          onload="document.getElementById('libStatus').textContent += 'SheetJS: OK ';"
+         textContent += 'Chart.js: OK';"
+         mat('cs-CZ', { maximumFractionDigits: 0 });
+    const fmtCZK = new Intl.NumberFormat('cs-CZ', { style: 'currency', currency: 'CZK' });
+
+    // --- Stav ---
+    let allRows = [];            // { supplier, date: Date, shipments: number, revenue: number }
+    let chart;                   // Chart.js instance
+    let dateFrom = null;         // Date | null
+    let dateTo = null;           // Date | null
+
+    // --- Zobraz info o načtení knihoven ---
+    (function showTypes(){
+      const status = 'XLSX: ' + (typeof window.XLSX) + ' · Chart: ' + (typeof window.Chart);
+      const el = document.getElementById('libStatus');
+      el.textContent = status;
+      el.className = (typeof XLSX !== 'undefined' && typeof Chart !== 'undefined') ? 'ok' : 'error';
+    })();
+
+    // --- Excel serial -> Date ---
+    function excelSerialToDate(serial) {
+      const utcDays = serial - 25569;
+      return new Date(utcDays * 86400 * 1000);
+    }
+
+    // --- Detekce hlavičky ---
+    function detectHeaderStart(rows) {
+      if (!rows.length) return 0;
+      const first = rows[0];
+      const looksHeader = first && first.length >= 4 &&
+                          (typeof first[2] !== 'number' || typeof first[3] !== 'number');
