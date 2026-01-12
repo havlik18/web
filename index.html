@@ -4,7 +4,7 @@
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1" />
-  <title>Reporty dodavatelů — Lukáš Havel (filtr datumu + graf)</title>
+  <title>Reporty dodavatelů — Lukáš Havel (filtr + graf, fix přetékání)</title>
 
   <style>
     :root {
@@ -14,24 +14,92 @@
       --warn: #ff7f0e; --warn-weak: rgba(255,127,14,0.12);
       --radius: 14px; --shadow: 0 10px 24px rgba(31,41,55,.08);
     }
-    html, body { height: 100%; background: linear-gradient(160deg, var(--bg), var(--bg2)); color: var(--text);
-      font-family: system-ui,-apple-system,"Segoe UI",Roboto,Arial,sans-serif; line-height: 1.6; margin: 0; }
+    html, body {
+      height: 100%;
+      background: linear-gradient(160deg, var(--bg), var(--bg2));
+      color: var(--text);
+      font-family: system-ui,-apple-system,"Segoe UI",Roboto,Arial,sans-serif;
+      line-height: 1.6;
+      margin: 0;
+    }
     header { padding: 20px 24px 8px; }
-    h1 { margin: 0; font-size: clamp(22px, 3vw, 28px); }
+    h1 { margin: 0; font-size: clamp(22px,3vw,28px); }
     .hint { color: var(--muted); font-size: 13px; margin: 6px 0 0; }
-    .grid { display: grid; grid-template-columns: 1fr; gap: 18px; padding: 0 24px 24px; }
-    @media (min-width: 980px) { .grid { grid-template-columns: 360px 1fr; } }
-    .card { background: var(--card); border: 1px solid var(--border); border-radius: var(--radius); box-shadow: var(--shadow); padding: 16px; }
+
+    .grid {
+      display: grid;
+      grid-template-columns: 1fr;
+      gap: 18px;
+      padding: 0 24px 24px;
+    }
+    @media (min-width: 980px) { .grid { grid-template-columns: 380px 1fr; } } /* sidebar lehce širší */
+    /* Důležité: dovolí zmenšení obsahu bez přetékání */
+    .grid > *, .card, .control, .row { min-width: 0; }
+
+    .card {
+      background: var(--card);
+      border: 1px solid var(--border);
+      border-radius: var(--radius);
+      box-shadow: var(--shadow);
+      padding: 16px;
+      overflow: hidden; /* prevence přetékání */
+    }
     .card h2 { margin: 0 0 10px; font-size: clamp(18px,2.2vw,22px); }
+
     label { font-weight: 600; display: block; margin-bottom: 6px; }
-    select, input[type="file"], input[type="date"] { width: 100%; padding: 10px 12px; border-radius: 10px; border: 1px solid var(--border); background: #fff; }
-    .row { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; }
-    .btn { display: inline-block; padding: 8px 12px; border-radius: 10px; border: 1px solid var(--border); background: #fff; cursor: pointer; }
+    select, input[type="file"], input[type="date"] {
+      width: 100%;
+      max-width: 100%;
+      box-sizing: border-box;
+      padding: 10px 12px;
+      border-radius: 10px;
+      border: 1px solid var(--border);
+      background: #fff;
+    }
+
+    /* Hezké tlačítko uvnitř file inputu + menší mezera (nepřetéká) */
+    input[type="file"]::file-selector-button {
+      padding: 8px 12px;
+      margin-right: 8px;
+      border-radius: 10px;
+      border: 1px solid var(--primary);
+      background: var(--primary);
+      color: #fff;
+      cursor: pointer;
+      white-space: nowrap; /* neházet se na nový řádek */
+    }
+    /* Fallback pro WebKit */
+    input[type="file"]::-webkit-file-upload-button {
+      padding: 8px 12px;
+      margin-right: 8px;
+      border-radius: 10px;
+      border: 1px solid var(--primary);
+      background: var(--primary);
+      color: #fff;
+      cursor: pointer;
+      white-space: nowrap;
+    }
+
+    .file-control { overflow: hidden; } /* pojistka pro file input */
+
+    .row {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 10px;
+    }
+    /* V úzkých oknech dej datumy pod sebe (lepší než přetékání) */
+    @media (max-width: 420px) {
+      .row { grid-template-columns: 1fr; }
+    }
+
+    .btn { display: inline-block; padding: 8px 12px; border-radius: 10px; border: 1px solid var(--border); background: #fff; cursor: pointer; white-space: nowrap; }
     .btn-primary { background: var(--primary); color: #fff; border-color: var(--primary); }
-    table { width: 100%; border-collapse: collapse; margin-top: 10px; }
+
+    table { width: 100%; border-collapse: collapse; margin-top: 10px; table-layout: auto; }
     thead th { background: var(--primary-weak); padding: 8px 10px; border-bottom: 1px solid var(--border); }
-    tbody td, tfoot td { border-top: 1px solid var(--border); padding: 8px 10px; font-size: 14px; }
+    tbody td, tfoot td { border-top: 1px solid var(--border); padding: 8px 10px; font-size: 14px; word-break: break-word; }
     tbody tr:hover { background: rgba(0,0,0,0.03); }
+
     .error { color: #b00020; }
     .ok { color: #1565c0; font-weight: 600; }
     .chart-wrap { border: 1px solid var(--border); border-radius: var(--radius); padding: 12px; background: #fff; }
@@ -40,7 +108,7 @@
 <body>
   <header>
     <h1>Reporty dodavatelů — filtr datumu + graf</h1>
-    <p class="hint">Nejdřív ověříme načtení knihoven (SheetJS + Chart.js). Potom nahraj Excel a filtruj podle dodavatele a období.</p>
+    <p class="hint">Nahraj Excel (.xls/.xlsx), vyber dodavatele a filtruj období.</p>
     <p id="libStatus" class="hint"></p>
   </header>
 
@@ -52,7 +120,9 @@
       <!-- Nahrání souboru -->
       <div class="control">
         <label for="file">1) Nahrát Excel (.xls / .xlsx)</label>
-        <input type="file" id="file" accept=".xls,.xlsx" />
+        <div class="file-control">
+          <input type="file" id="file" accept=".xls,.xlsx" />
+        </div>
         <div id="fileInfo" class="hint" style="margin-top:6px"></div>
         <div id="error" class="error" style="margin-top:6px"></div>
       </div>
@@ -78,7 +148,7 @@
             <input type="date" id="dateTo" />
           </div>
         </div>
-        <div style="margin-top:8px; display:flex; gap:8px;">
+        <div style="margin-top:8px; display:flex; gap:8px; flex-wrap:wrap;">
           <button id="applyFilterBtn" class="btn btn-primary">Použít filtr</button>
           <button id="clearFilterBtn" class="btn">Vyčistit filtr</button>
         </div>
@@ -126,20 +196,16 @@
     </main>
   </div>
 
-  <!-- Lokální knihovny z repozitáře -->
+  <!-- Lokální knihovny (musí existovat v /web/vendor/) -->
   <script src="/web/vendor/xlsx.full.min.js"
           onload="document.getElementById('libStatus').textContent += 'SheetJS: OK ';"
-         textContent += 'Chart.js: OK';"
-         mat('cs-CZ', { maximumFractionDigits: 0 });
-    const fmtCZK = new Intl.NumberFormat('cs-CZ', { style: 'currency', currency: 'CZK' });
+          onerror="document.getElementById('libStatuserror="document.getElementById('libStatus').textContent += 'Chart.js: CH 'currency', currency: 'CZK' });
 
-    // --- Stav ---
-    let allRows = [];            // { supplier, date: Date, shipments: number, revenue: number }
-    let chart;                   // Chart.js instance
-    let dateFrom = null;         // Date | null
-    let dateTo = null;           // Date | null
+    let allRows = [];    // { supplier, date: Date, shipments: number, revenue: number }
+    let chart;           // Chart.js instance
+    let dateFrom = null; // Date | null
+    let dateTo = null;   // Date | null
 
-    // --- Zobraz info o načtení knihoven ---
     (function showTypes(){
       const status = 'XLSX: ' + (typeof window.XLSX) + ' · Chart: ' + (typeof window.Chart);
       const el = document.getElementById('libStatus');
@@ -147,13 +213,10 @@
       el.className = (typeof XLSX !== 'undefined' && typeof Chart !== 'undefined') ? 'ok' : 'error';
     })();
 
-    // --- Excel serial -> Date ---
     function excelSerialToDate(serial) {
       const utcDays = serial - 25569;
       return new Date(utcDays * 86400 * 1000);
     }
-
-    // --- Detekce hlavičky ---
     function detectHeaderStart(rows) {
       if (!rows.length) return 0;
       const first = rows[0];
@@ -162,7 +225,6 @@
       return looksHeader ? 1 : 0;
     }
 
-    // --- Událost: nahrání souboru ---
     document.getElementById('file').addEventListener('change', async (e) => {
       resetUI();
       const file = e.target.files?.[0];
@@ -209,3 +271,38 @@
           suppliers.map(s => `<option value="${escapeHtml(s)}">${escapeHtml(s)}</option>`).join('');
         sel.disabled = suppliers.length === 0;
 
+        document.getElementById('tableInfo').textContent =
+          `Načteno řádků: ${fmtInt.format(allRows.length)} · List: ${sheetName}`;
+
+        // Nastavit implicitní rozsah dat (min/max) do date pickerů
+        const minDate = allRows.length ? allRows[0].date : null;
+        const maxDate = allRows.length ? allRows[allRows.length - 1].date : null;
+        if (minDate && maxDate) {
+          document.getElementById('dateFrom').value = toISO(minDate);
+          document.getElementById('dateTo').value = toISO(maxDate);
+          dateFrom = minDate;
+          dateTo = maxDate;
+          document.getElementById('filterInfo').textContent =
+            `Období: ${toISO(minDate)} → ${toISO(maxDate)}`;
+        }
+
+      } catch (err) {
+        console.error(err);
+        document.getElementById('error').textContent =
+          'Nepodařilo se načíst soubor. Zkontroluj formát XLS/XLSX a sloupce A–D.';
+      }
+    });
+
+    document.getElementById('supplier').addEventListener('change', renderView);
+    document.getElementById('metric').addEventListener('change', renderView);
+
+    document.getElementById('applyFilterBtn').addEventListener('click', () => {
+      const df = document.getElementById('dateFrom').value;
+      const dt = document.getElementById('dateTo').value;
+      dateFrom = df ? new Date(df + 'T00:00:00') : null;
+      dateTo   = dt ? new Date(dt + 'T23:59:59') : null;
+      renderView();
+    });
+    document.getElementById('clearFilterBtn').addEventListener('click', () => {
+      document.getElementById('dateFrom').value = '';
+      document.getElementById('dateTo').value   = '';
