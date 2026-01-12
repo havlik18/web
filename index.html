@@ -1,14 +1,8 @@
 
-  <!-- ... ostatní obsah stránky ... -->
+<!-- MUSÍ být úplně dole nad </body> -->
+/web/vendor/xlsx.full.min.js</script>
 
-  <!-- Lokální knihovny (bez defer), na konci body -->
-  /web/vendor/xlsx.full.min.js</script>
-  /web/vendor/chart.umd.min.js</script>
-
-  <!-- Tvůj hlavní skript s logikou stránky -->
-  <script>
-    // Sem patří tvůj JS (ten dlouhý blok, co načítá Excel a kreslí graf)
-    // Může zůstat tak, jak ho máš – jen ať je až za knihovnami.
-  </script>
-</body>
-</html>
+<script src="/web/vendor/chart.umd.min.js"
+       // test po obou načteních
+  console.log('AFTER LOAD — XLSX:', typeof XLSX, 'Chart:', typeof Chart);
+</script>
