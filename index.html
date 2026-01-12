@@ -7,79 +7,66 @@
   <title>Reporty dodavatelů — Excel (A: Dodavatel, B: Obrat 2024, C: Objednávky 2024, D: Obrat 2025, E: Objednávky 2025)</title>
 
   <style>
-    :root {
+    :root{
       color-scheme: light dark;
-      --bg: #f7f9fc; --bg2: #eef3fb; --text: #1f2937; --muted: #6b7280;
-      --card: #ffffff; --border: #e5e7eb; --primary: #1565c0;
-      --radius: 14px; --shadow: 0 10px 24px rgba(31,41,55,.08);
+      --bg:#f7f9fc; --bg2:#eef3fb; --text:#1f2937; --muted:#6b7280;
+      --card:#fff; --border:#e5e7eb; --primary:#1565c0;
+      --radius:14px; --shadow:0 10px 24px rgba(31,41,55,.08);
 
-      /* Barvy grafu (2025 výraznější) */
-      --rev24: #89a6d8;
-      --rev25: #1565c0;
-      --ord24: #9bd386;
-      --ord25: #2f9e44;
+      /* barvy grafu (2025 zvýrazněn) */
+      --rev24:#89a6d8;  /* obrat 2024 tlumeně modrá */
+      --rev25:#1565c0;  /* obrat 2025 výrazná modrá */
+      --ord24:#9bd386;  /* objednávky 2024 tlumeně zelená */
+      --ord25:#2f9e44;  /* objednávky 2025 výrazná zelená */
     }
+    html,body{height:100%;background:linear-gradient(160deg,var(--bg),var(--bg2));color:var(--text);
+      font-family:system-ui,-apple-system,"Segoe UI",Roboto,Arial,sans-serif;line-height:1.6;margin:0}
+    header{padding:20px 24px 8px}
+    h1{margin:0;font-size:clamp(22px,3vw,28px)}
+    .hint{color:var(--muted);font-size:13px;margin:6px 0 0}
 
-    html, body {
-      height: 100%;
-      background: linear-gradient(160deg, var(--bg), var(--bg2));
-      color: var(--text);
-      font-family: system-ui, -apple-system, "Segoe UI", Roboto, Arial, sans-serif;
-      line-height: 1.6; margin: 0;
-    }
+    .grid{display:grid;grid-template-columns:1fr;gap:18px;padding:0 24px 24px}
+    @media(min-width:980px){.grid{grid-template-columns:380px 1fr}}
+    .grid>*{min-width:0}
 
-    header { padding: 20px 24px 8px; }
-    h1 { margin: 0; font-size: clamp(22px,3vw,28px); }
-    .hint { color: var(--muted); font-size: 13px; margin: 6px 0 0; }
+    .card{background:var(--card);border:1px solid var(--border);border-radius:var(--radius);
+      box-shadow:var(--shadow);padding:16px;overflow:hidden}
+    .card h2{margin:0 0 10px;font-size:clamp(18px,2.2vw,22px)}
+    label{font-weight:600;display:block;margin-bottom:6px}
 
-    .grid { display: grid; grid-template-columns: 1fr; gap: 18px; padding: 0 24px 24px; }
-    @media (min-width: 980px) { .grid { grid-template-columns: 380px 1fr; } }
-    .grid > * { min-width: 0; }
-
-    .card {
-      background: var(--card);
-      border: 1px solid var(--border);
-      border-radius: var(--radius);
-      box-shadow: var(--shadow);
-      padding: 16px; overflow: hidden;
-    }
-    .card h2 { margin: 0 0 10px; font-size: clamp(18px,2.2vw,22px); }
-
-    label { font-weight: 600; display: block; margin-bottom: 6px; }
-    select, input[type="file"] {
-      width: 100%; max-width: 100%; box-sizing: border-box;
-      padding: 10px 12px; border-radius: 10px; border: 1px solid var(--border); background: #fff;
-    }
+    select,input[type="file"]{width:100%;max-width:100%;box-sizing:border-box;padding:10px 12px;
+      border-radius:10px;border:1px solid var(--border);background:#fff}
     input[type="file"]::file-selector-button,
-    input[type="file"]::-webkit-file-upload-button {
-      padding: 8px 12px; margin-right: 8px; border-radius: 10px;
-      border: 1px solid var(--primary); background: var(--primary); color: #fff; cursor: pointer; white-space: nowrap;
+    input[type="file"]::-webkit-file-upload-button{
+      padding:8px 12px;margin-right:8px;border-radius:10px;border:1px solid var(--primary);
+      background:var(--primary);color:#fff;cursor:pointer;white-space:nowrap
     }
-    .file-control { overflow: hidden; }
+    .file-control{overflow:hidden}
 
-    .btn { display: inline-block; padding: 8px 12px; border-radius: 10px; border: 1px solid var(--border); background: #fff; cursor: pointer; white-space: nowrap; }
-    .btn-primary { background: var(--primary); color: #fff; border-color: var(--primary); }
+    .btn{display:inline-block;padding:8px 12px;border-radius:10px;border:1px solid var(--border);
+      background:#fff;cursor:pointer;white-space:nowrap}
+    .btn-primary{background:var(--primary);color:#fff;border-color:var(--primary)}
 
-    table { width: 100%; border-collapse: collapse; margin-top: 10px; table-layout: auto; }
-    thead th { background: rgba(21,101,192,0.12); padding: 8px 10px; border-bottom: 1px solid var(--border); }
-    tbody td, tfoot td { border-top: 1px solid var(--border); padding: 8px 10px; font-size: 14px; word-break: break-word; }
-    tbody tr:hover { background: rgba(0,0,0,0.03); }
+    table{width:100%;border-collapse:collapse;margin-top:10px;table-layout:auto}
+    thead th{background:rgba(21,101,192,.12);padding:8px 10px;border-bottom:1px solid var(--border)}
+    tbody td,tfoot td{border-top:1px solid var(--border);padding:8px 10px;font-size:14px;word-break:break-word}
+    tbody tr:hover{background:rgba(0,0,0,.03)}
 
-    .chart-wrap { border: 1px solid var(--border); border-radius: var(--radius); padding: 12px; background: #fff; }
-    .muted { color: var(--muted); font-size: 13px; }
-    .error { color: #b00020; }
-    .status { font-size: 13px; padding: 8px 10px; border: 1px dashed var(--border); border-radius: 10px; background: rgba(0,0,0,0.03); }
+    .chart-wrap{border:1px solid var(--border);border-radius:var(--radius);padding:12px;background:#fff}
+    .muted{color:var(--muted);font-size:13px}
+    .error{color:#b00020}
+    .status{font-size:13px;padding:8px 10px;border:1px dashed var(--border);border-radius:10px;background:rgba(0,0,0,.03)}
   </style>
 </head>
 <body>
   <header>
     <h1>Reporty dodavatelů — Excel (2024 vs 2025)</h1>
-    <p class="hint">Načti Excel (.xls/.xlsx) se sloupci: <strong>A</strong> Dodavatel, <strong>B</strong> Obrat 2024, <strong>C</strong> Objednávky 2024, <strong>D</strong> Obrat 2025, <strong>E</strong> Objednávky 2025.</p>
+    <p class="hint">Očekávané sloupce: <strong>A</strong> Dodavatel, <strong>B</strong> Obrat 2024, <strong>C</strong> Objednávky 2024, <strong>D</strong> Obrat 2025, <strong>E</strong> Objednávky 2025.</p>
     <p id="libStatus" class="hint"></p>
   </header>
 
   <div class="grid">
-    <!-- OVLÁDACÍ PANEL -->
+    <!-- Ovládací panel -->
     <aside class="card">
       <h2>Ovládací panel</h2>
 
@@ -100,17 +87,17 @@
         </select>
       </div>
 
-      <div style="margin-top:10px; display:flex; gap:8px; flex-wrap:wrap;">
+      <div style="margin-top:10px;display:flex;gap:8px;flex-wrap:wrap">
         <button id="exportBtn" class="btn">Export CSV (tabulka)</button>
         <button id="resetBtn" class="btn">Reset</button>
       </div>
 
-      <p class="muted" style="margin-top:10px">Pozn.: První řádek s textovými hlavičkami automaticky vynecháme.</p>
+      <p class="muted" style="margin-top:10px">Pozn.: 1. řádek s textovou hlavičkou automaticky přeskočíme.</p>
     </aside>
 
-    <!-- DATA + GRAF -->
+    <!-- Data + graf -->
     <main class="card">
-      <h2>Graf 2024 vs 2025 (zvýrazněný 2025)</h2>
+      <h2>Graf 2024 vs 2025 (2025 zvýrazněn)</h2>
       <div class="chart-wrap"><canvas id="chart" height="140"></canvas></div>
       <p class="muted" style="margin-top:6px">
         Legenda: <span style="color:var(--rev24)">Obrat 2024</span>, <span style="color:var(--rev25)">Obrat 2025</span>,
@@ -134,73 +121,34 @@
     </main>
   </div>
 
-  <!-- Lokální knihovny (musí existovat v /web/vendor/) -->
+  <!-- Lokální knihovny z repozitáře (musí existovat) -->
   <script src="/web/vendor/xlsx.full.min.js"
-          onload="document/script>
+          onload="document.getElementById('libStatus').textContent +=tElementById('libStatus').textContent += 'Chart.js: OK';"
+          onerror="document.getElementById('libStatus').textContent +=;
+    var fmtCZK = new Intl.NumberFormat('cs-CZ', { style: 'currency', currency: 'CZK' });
 
-  <!-- Hlavní logika -->
-  <script>
-    const fmtInt = new Intl.NumberFormat('cs-CZ', { maximumFractionDigits: 0 });
-    const fmtCZK = new Intl.NumberFormat('cs-CZ', { style: 'currency', currency: 'CZK' });
+    var suppliers = [];       // { name, rev24, ord24, rev25, ord25 }
+    var chart = null;
 
-    // Data: { name, rev24, ord24, rev25, ord25 }
-    let suppliers = [];
-    let chart;
+    var fileEl = document.getElementById('file');
+    var fileInfoEl = document.getElementById('fileInfo');
+    var statusEl = document.getElementById('status');
+    var errorEl = document.getElementById('error');
+    var selEl = document.getElementById('supplierSel');
+    var tableInfoEl = document.getElementById('tableInfo');
+    var tbodyEl = document.querySelector('#table tbody');
+    var exportBtn = document.getElementById('exportBtn');
+    var resetBtn = document.getElementById('resetBtn');
+    var chartCanvas = document.getElementById('chart');
 
-    const fileEl = document.getElementById('file');
-    const fileInfoEl = document.getElementById('fileInfo');
-    const statusEl = document.getElementById('status');
-    const errorEl = document.getElementById('error');
-    const selEl = document.getElementById('supplierSel');
-    const tableInfoEl = document.getElementById('tableInfo');
-    const tbodyEl = document.querySelector('#table tbody');
-    const exportBtn = document.getElementById('exportBtn');
-    const resetBtn = document.getElementById('resetBtn');
-    const chartCanvas = document.getElementById('chart');
-
-    // Stav knihoven
-    (function showTypes(){
-      const status = 'XLSX: ' + (typeof window.XLSX) + ' · Chart: ' + (typeof window.Chart);
-      const el = document.getElementById('libStatus');
+    // informace o načtení knihoven
+    (function(){
+      var status = 'XLSX: ' + (typeof window.XLSX) + ' · Chart: ' + (typeof window.Chart);
+      var el = document.getElementById('libStatus');
       el.textContent = status;
       el.className = (typeof XLSX !== 'undefined' && typeof Chart !== 'undefined') ? 'hint' : 'error';
     })();
 
-    // Po výběru souboru ihned načítáme (není potřeba extra tlačítko)
-    fileEl.addEventListener('change', async (e) => {
+    // Po výběru souboru ihned načti (není třeba další tlačítko)
+    fileEl.addEventListener('change', function(e){
       clearMessages();
-      const file = e.target.files?.[0];
-      if (!file) return;
-
-      fileInfoEl.textContent = `Soubor: ${file.name} (${fmtInt.format(file.size)} B)`;
-      statusEl.textContent = 'Stav: načítám a zpracovávám…';
-
-      try {
-        if (typeof XLSX === 'undefined') throw new Error('Knihovna XLSX není načtená');
-        const arrayBuffer = await file.arrayBuffer();
-
-        const wb = XLSX.read(arrayBuffer, { type: 'array', cellDates: true });
-        const sheetName = wb.SheetNames[0];
-        const ws = wb.Sheets[sheetName];
-        const rows = XLSX.utils.sheet_to_json(ws, { header: 1, raw: true });
-
-        const startIdx = detectHeaderStart(rows);
-        suppliers = [];
-
-        for (let i = startIdx; i < rows.length; i++) {
-          const r = rows[i];
-          if (!r || r.length < 5) continue;
-
-          const name  = String(r[0] ?? '').trim();
-          const rev24 = toNum(r[1]);
-          const ord24 = toNum(r[2]);
-          const rev25 = toNum(r[3]);
-          const ord25 = toNum(r[4]);
-
-          if (!name) continue;
-          suppliers.push({ name, rev24, ord24, rev25, ord25 });
-        }
-
-        renderTable();
-
-        selEl.innerHTML = '<option value="">— vyber —</option>' +
