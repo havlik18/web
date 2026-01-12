@@ -4,228 +4,334 @@
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1" />
-  <title>Lukáš Havel | Prezentační stránka</title>
+  <title>Reporty dodavatelů — Lukáš Havel</title>
+
+  <!-- Jednoduché styly -->
   <style>
     :root { color-scheme: light dark; }
-    body { font-family: system-ui, -apple-system, "Segoe UI", Roboto, Arial, sans-serif; margin: 40px; line-height: 1.6; }
-    header { margin-bottom: 24px; }
-    h1 { font-size: 28px; margin: 0 0 6px; }
-    h2 { font-size: 22px; margin: 24px 0 12px; }
-    .grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(240px, 1fr)); gap: 12px; }
-    .card { border: 1px solid #ddd; border-radius: 10px; padding: 16px; background: rgba(255,255,255,0.7); backdrop-filter: blur(2px); }
-    .card h3 { margin: 0 0 8px; }
-    footer { margin-top: 32px; font-size: 13px; color: #666; }
-    .btn { display: inline-block; padding: 10px 14px; background: #0a66c2; color: #fff; border-radius: 6px; text-decoration: none; cursor: pointer; }
-    .btn:hover { background: #094f96; }
-    nav { margin: 12px 0 24px; }
-    nav .btn { margin-right: 12px; }
-    img.responsive { max-width: 100%; height: auto; border-radius: 8px; }
-    /* Modal */
-    .modal-backdrop { position: fixed; inset: 0; background: rgba(0,0,0,0.5); display: none; align-items: center; justify-content: center; }
-    .modal { background: #fff; color: #000; width: min(560px, 90vw); border-radius: 12px; padding: 20px; box-shadow: 0 10px 30px rgba(0,0,0,0.3); }
-    .modal header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 12px; }
-    .close { background: transparent; border: none; font-size: 20px; cursor: pointer; }
-    /* Přepínač tématu (světlé/tmavé) */
-    .theme-toggle { margin-left: 8px; background: #444; }
-    .theme-toggle:hover { background: #222; }
-    /* Akordeon */
-    .accordion-item { border: 1px solid #ddd; border-radius: 8px; margin-bottom: 8px; overflow: hidden; }
-    .accordion-header { background: #f7f7f7; padding: 10px 12px; cursor: pointer; }
-    .accordion-content { display: none; padding: 12px; }
+    body { font-family: system-ui, -apple-system, "Segoe UI", Roboto, Arial, sans-serif; margin: 24px; line-height: 1.6; }
+    h1 { font-size: 24px; margin: 0 0 8px; }
+    .row { display: grid; grid-template-columns: 1fr; gap: 16px; }
+    @media (min-width: 900px) { .row { grid-template-columns: 300px 1fr; } }
+    .card { border: 1px solid #ddd; border-radius: 10px; padding: 16px; background: rgba(255,255,255,0.7); }
+    label { font-weight: 600; display: block; margin-bottom: 6px; }
+    select, input[type="file"] { width: 100%; padding: 8px; }
+    table { width: 100%; border-collapse: collapse; margin-top: 12px; }
+    th, td { border: 1px solid #ddd; padding: 6px 8px; text-align: left; font-size: 14px; }
+    tfoot td { font-weight: 700; }
+    .muted { color: #666; font-size: 13px; }
+    canvas { background: rgba(255,255,255,0.7); border: 1px solid #ddd; border-radius: 10px; }
+    .error { color: #b00020; }
   </style>
+
+  <!-- SheetJS pro načtení Excelu (XLS/XLSX) — CDN -->
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min  <!-- Chart.js pro grafy — CDN -->
+  <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.umd.min.js</script>
 </head>
 <body>
-  <header>
-    <h1>Lukáš Havel – Business Development</h1>
-    <p>Prezentační stránka s nabídkou a kontakty. Funkční tlačítka bez backendu.</p>
-    <nav>
-      #nabidkaNabídka</a>
-      #kontaktKontakt</a>
-      <button class="btn" id="scroll-cta">Rychlý kontakt</button>
-      <button class="btn theme-toggle" id="toggle-theme">Tmavý/světlý režim</button>
-    </nav>
+  <header style="margin-bottom:16px">
+    <h1>Reporty dodavatelů</h1>
+    <p class="muted">Nahraj Excel (.xls nebo .xlsx) se sloupci: A&nbsp;= Dodavatel, B&nbsp;= Datum, C&nbsp;= Počet zásilek, D&nbsp;= Obrat.</p>
   </header>
 
-  <!-- JSON data -->
-  <script type="application/json" id="data-json">
-  {
-    "hero": {
-      "obrazek": "images/hero.jpg",
-      "nadpis": "Pomáhám firmám růst",
-      "popis": "Validace trhu, akvizice partnerů, obchodní pipeline."
-    },
-    "nabidka": [
-      { "nazev": "Audit obchodní pipeline", "popis": "Analýza procesu od leadu po uzavření.", "cena": "Na dotaz" },
-      { "nazev": "Go-to-market konzultace", "popis": "Strategie vstupu na nový trh.", "cena": "Na dotaz" },
-      { "nazev": "Workshop BD tým", "popis": "Metodika, skripty, nástroje, reporting.", "cena": "Na dotaz" }
-    ],
-    "kontakt": {
-      "jmeno": "Lukáš Havel",
-      "email": "lukas.havel@example.com",
-      "telefon": "+420 123 456 789",
-      "linkedin": "https://www.linkedin.com/in/vasprofil"
-    }
-  }
-  </script>
-
-  <main>
-    <section id="hero">
-      <h2 id="hero-title"></h2>
-      <p id="hero-desc"></p>
-      <img id="hero-img" class="responsive" alt="Ilustrační obrázek" />
-      <div style="margin-top:12px">
-        <button class="btn" id="open-modal">Více informací</button>
-        <a class="btn" id="download-bžuru (PDF)</a>
+  <div class="row">
+    <!-- Ovládací panel -->
+    <aside class="card">
+      <div style="margin-bottom:12px">
+        <label for="file">1) Nahrát Excel soubor</label>
+        <input type="file" id="file" accept=".xls,.xlsx" />
+        <div id="fileInfo" class="muted" style="margin-top:6px"></div>
+        <div id="error" class="error" style="margin-top:6px"></div>
       </div>
-    </section>
 
-    <section id="faq">
-      <h2>Časté dotazy</h2>
-      <div class="accordion-item">
-        <div class="accordion-header">Jak probíhá spolupráce?</div>
-        <div class="accordion-content">Úvodní call, analýza, návrh plánu, iterace a reporting.</div>
+      <div style="margin-bottom:12px">
+        <label for="supplier">2) Vyber dodavatele</label>
+        <select id="supplier" disabled>
+          <option value="" selected>— nejprve nahraj soubor —</option>
+        </select>
       </div>
-      <div class="accordion-item">
-        <div class="accordion-header">Je možné pilotní projekt?</div>
-        <div class="accordion-content">Ano, typicky 2–4 týdny, jasná kritéria úspěchu.</div>
+
+      <div style="margin-bottom:12px">
+        <label for="metric">3) Zobrazit metriky</label>
+        <select id="metric">
+          <option value="both" selected>Počet zásilek + Obrat</option>
+          <option value="shipments">Pouze počet zásilek</option>
+          <option value="revenue">Pouze obrat</option>
+        </select>
       </div>
-    </section>
 
-    <section id="nabidka">
-      <h2>Nabídka</h2>
-      <div class="grid" id="nabidka-grid"></div>
-    </section>
+      <p class="muted">Tip: Pokud první řádek v Excelu obsahuje hlavičky, detekujeme je a vynecháme automaticky.</p>
+    </aside>
 
-    <section id="kontakt">
-      <h2>Kontakt</h2>
-      <div class="card" id="kontakt-card"></div>
-      <div style="margin-top:12px">
-        <a class="btn" id="email-btn">Napsat e‑mail</a>
-        <a class="btn" id="tel-btn">Zavolat</a>
-        <button class="btn" id="copy-email">Zkopírovat e‑mail</button>
-        <button class="btn" id="copy-tel">Zkopírovat telefon</button>
-      </div>
-    </section>
-  </main>
+    <!-- Data + graf -->
+    <main class="card">
+      <section>
+        <h2 style="margin:0 0 10px">Graf dodavatele</h2>
+        <canvas id="chart" height="120"></canvas>
+      </section>
 
-  <footer>
-    © <span id="year"></span> Lukáš Havel — Všechna práva vyhrazena.
-  </footer>
-
-  <!-- Modal -->
-  <div class="modal-backdrop" id="modal-backdrop" role="dialog" aria-modal="true" aria-hidden="true">
-    <div class="modal" role="document">
-      <header>
-        <strong>Více informací</strong>
-        <button class="close" id="close-modal" aria-label="Zavřít">✕</button>
-      </header>
-      <p>Nabízím konzultace a workshopy zaměřené na růst a partnerství. Ozvěte se — připravím návrh na míru.</p>
-      <div style="text-align:right; margin-top:12px">
-        <button class="btn" id="modal-contact">Kontaktovat</button>
-      </div>
-    </div>
+      <section style="margin-top:16px">
+        <h2 style="margin:0 0 10px">Tabulka dat</h2>
+        <div class="muted" id="tableInfo"></div>
+        <table id="table">
+          <thead>
+            <tr>
+              <th>Dodavatel</th>
+              <th>Datum</th>
+              <th>Počet zásilek</th>
+              <th>Obrat</th>
+            </tr>
+          </thead>
+          <tbody></tbody>
+          <tfoot>
+            <tr>
+              <td colspan="2">Součet</td>
+              <td id="sumShipments">0</td>
+              <td id="sumRevenue">0</td>
+            </tr>
+          </tfoot>
+        </table>
+      </section>
+    </main>
   </div>
 
+  <footer style="margin-top:20px" class="muted">
+    © <span id="year"></span> Lukáš Havel
+  </footer>
+
   <script>
-    // Načtení JSON dat
-    const data = JSON.parse(document.getElementById('data-json').textContent);
+    // Pomocné formátování čísel
+    const fmtInt = new Intl.NumberFormat('cs-CZ', { maximumFractionDigits: 0 });
+    const fmtCZK = new Intl.NumberFormat('cs-CZ', { style: 'currency', currency: 'CZK' });
 
-    // Hero
-    document.getElementById('hero-title').textContent = data.hero.nadpis;
-    document.getElementById('hero-desc').textContent = data.hero.popis;
-    document.getElementById('hero-img').src = data.hero.obrazek;
+    // Data držíme v paměti po nahrání souboru
+    let allRows = [];      // každý řádek: { supplier, date: Date, shipments: number, revenue: number }
+    let suppliers = [];    // unikátní názvy
 
-    // Nabídka
-    const grid = document.getElementById('nabidka-grid');
-    data.nabidka.forEach(item => {
-      const div = document.createElement('div');
-      div.className = 'card';
-      div.innerHTML = `
-        <h3>${item.nazev}</h3>
-        <p>${item.popis}</p>
-        <strong>${item.cena}</strong>
-        <div style="margin-top:8px">
-          <button class="btn btn-small    contactKontaktovat</button>
-        </div>
-      `;
-      grid.appendChild(div);
-    });
+    // Graf (Chart.js instance)
+    let chart;
 
-    // Kontakt
-    const k = data.kontakt;
-    const kontaktDiv = document.getElementById('kontakt-card');
-    kontaktDiv.innerHTML = `
-      <p><strong>${k.jmeno}</strong></p>
-      <p>E-mail: mailto:${k.email}${k.email}</a></p>
-      <p>Telefon: tel:${k.telefon.replace(/\\s+/g,${k.telefon}</a></p>
-      <p>LinkedIn: ${k.linkedin}${k.linkedin}</a></p>
-    `;
-
-    // Funkční tlačítka – e‑mail, telefon, kopírování
-    document.getElementById('email-btn').href = `mailto:${k.email}?subject=Poptávka&body=Dobrý den, rád bych...`;
-    document.getElementById('tel-btn').href = `tel:${k.telefon.replace(/\\s+/g,'')}`;
-    document.getElementById('copy-email').addEventListener('click', async () => {
-      await navigator.clipboard.writeText(k.email);
-      alert('E‑mail zkopírován do schránky.');
-    });
-    document.getElementById('copy-tel').addEventListener('click', async () => {
-      await navigator.clipboard.writeText(k.telefon);
-      alert('Telefon zkopírován do schránky.');
-    });
-
-    // CTA – plynulý scroll na kontakt
-    document.getElementById('scroll-cta').addEventListener('click', () => {
-      document.getElementById('kontakt').scrollIntoView({ behavior: 'smooth' });
-    });
-
-    // Modal – otevření/zavření
-    const modalBackdrop = document.getElementById('modal-backdrop');
-    document.getElementById('open-modal').addEventListener('click', () => {
-      modalBackdrop.style.display = 'flex';
-      modalBackdrop.setAttribute('aria-hidden', 'false');
-    });
-    document.getElementById('close-modal').addEventListener('click', closeModal);
-    modalBackdrop.addEventListener('click', (e) => { if (e.target === modalBackdrop) closeModal(); });
-    function closeModal() {
-      modalBackdrop.style.display = 'none';
-      modalBackdrop.setAttribute('aria-hidden', 'true');
+    // Excel -> Date (když přijde Excel serial číslo)
+    function excelSerialToDate(serial) {
+      // Excel datový serial => UTC date (offset 25569 dní od 1970-01-01)
+      // Funguje pro moderní data, není třeba řešit 1900 leap bug.
+      const utcDays = serial - 25569;
+      return new Date(utcDays * 86400 * 1000);
     }
-    document.getElementById('modal-contact').addEventListener('click', () => {
-      window.location.href = `mailto:${k.email}?subject=Zájem o spolupráci`;
-    });
 
-    // Přepínač tématu – jednoduché (přepíná třídu na body)
-    const toggleBtn = document.getElementById('toggle-theme');
-    let dark = false;
-    toggleBtn.addEventListener('click', () => {
-      dark = !dark;
-      document.body.style.background = dark ? '#111' : '';
-      document.body.style.color = dark ? '#eee' : '';
-    });
+    // Parsování nahraného souboru
+    document.getElementById('file').addEventListener('change', async (e) => {
+      resetUI();
+      const file = e.target.files?.[0];
+      if (!file) return;
 
-    // Akordeon – FAQ
-    document.querySelectorAll('.accordion-header').forEach(h => {
-      h.addEventListener('click', () => {
-        const content = h.nextElementSibling;
-        const visible = content.style.display === 'block';
-        content.style.display = visible ? 'none' : 'block';
-      });
-    });
+      document.getElementById('fileInfo').textContent = `Soubor: ${file.name} (${fmtInt.format(file.size)} B)`;
 
-    // Tlačítka v kartách nabídky – ukázková akce
-    grid.addEventListener('click', (e) => {
-      const btn = e.target.closest('button[data-action]');
-      if (!btn) return;
-      const card = btn.closest('.card');
-      const title = card.querySelector('h3').textContent;
-      if (btn.dataset.action === 'detail') {
-        alert(`Detail: ${title}`);
-      } else if (btn.dataset.action === 'contact') {
-        window.location.href = `mailto:${k.email}?subject=Poptávka: ${encodeURIComponent(title)}`;
+      try {
+        const arrayBuffer = await file.arrayBuffer();
+        // SheetJS: přečíst workbook (vč. XLS) — v prohlížeči
+        const wb = XLSX.read(arrayBuffer, { type: 'array', cellDates: true });
+        const sheetName = wb.SheetNames[0];
+        const ws = wb.Sheets[sheetName];
+
+        // Vytáhnout data jako pole řádků (header:1 -> každá řádka je pole hodnot)
+        const rows = XLSX.utils.sheet_to_json(ws, { header: 1, raw: true });
+
+        // Zpracování: A= dodavatel, B= datum, C= zásilky, D= obrat
+        // Detekce hlavičky: pokud první řádek "nevypadá" jako data, přeskočíme jej.
+        const startIdx = detectHeaderStart(rows);
+
+        allRows = [];
+        for (let i = startIdx; i < rows.length; i++) {
+          const r = rows[i];
+          if (!r || r.length < 4) continue;
+          const supplier = String(r[0]).trim();
+          let dateVal = r[1];
+          let shipments = Number(r[2]);
+          let revenue = Number(r[3]);
+
+          // Datum může být string nebo excel serial číslo
+          let date;
+          if (dateVal instanceof Date) {
+            date = dateVal;
+          } else if (typeof dateVal === 'number') {
+            date = excelSerialToDate(dateVal);
+          } else if (typeof dateVal === 'string') {
+            date = new Date(dateVal);
+          }
+
+          // Validace minimálně: dodavatel + datum
+          if (!supplier || isNaN(date?.getTime())) continue;
+
+          // Opravit NaN na 0
+          shipments = isNaN(shipments) ? 0 : shipments;
+          revenue = isNaN(revenue) ? 0 : revenue;
+
+          allRows.push({ supplier, date, shipments, revenue });
+        }
+
+        // Seřadit podle data
+        allRows.sort((a, b) => a.date - b.date);
+
+        // Unikátní seznam dodavatelů
+        suppliers = Array.from(new Set(allRows.map(r => r.supplier))).sort((a, b) => a.localeCompare(b, 'cs'));
+
+        // Naplnit select
+        const sel = document.getElementById('supplier');
+        sel.innerHTML = '<option value="">— vyber —</option>' + suppliers.map(s => `<option value="${escapeHtml(s)}">${escapeHtml(s)}</option>`).join('');
+        sel.disabled = suppliers.length === 0;
+
+        document.getElementById('tableInfo').textContent = `Načteno řádků: ${fmtInt.format(allRows.length)} · Dodavatelů: ${fmtInt.format(suppliers.length)} · List: ${sheetName}`;
+
+      } catch (err) {
+        console.error(err);
+        document.getElementById('error').textContent = 'Nepodařilo se načíst soubor. Zkontroluj, že jde o XLS/XLSX s požadovanými sloupci.';
       }
     });
 
-    // Rok ve footeru
+    // Po změně dodavatele nebo metriky vykreslit tabulku a graf
+    document.getElementById('supplier').addEventListener('change', renderView);
+    document.getElementById('metric').addEventListener('change', renderView);
+
+    function renderView() {
+      const supplier = document.getElementById('supplier').value;
+      if (!supplier) return;
+
+      // Filtrovaná data dodavatele
+      const rows = allRows.filter(r => r.supplier === supplier);
+
+      // Tabulka
+      const tbody = document.querySelector('#table tbody');
+      tbody.innerHTML = rows.map(r => `
+        <tr>
+          <td>${escapeHtml(r.supplier)}</td>
+          <td>${toISO(r.date)}</td>
+          <td style="text-align:right">${fmtInt.format(r.shipments)}</td>
+          <td style="text-align:right">${fmtCZK.format(r.revenue)}</td>
+        </tr>
+      `).join('');
+
+      // Součty
+      const sumShipments = rows.reduce((acc, r) => acc + r.shipments, 0);
+      const sumRevenue = rows.reduce((acc, r) => acc + r.revenue, 0);
+      document.getElementById('sumShipments').textContent = fmtInt.format(sumShipments);
+      document.getElementById('sumRevenue').textContent = fmtCZK.format(sumRevenue);
+
+      // Agregace po dnech (stejné datum -> součet)
+      const byDateMap = new Map(); // key: YYYY-MM-DD
+      for (const r of rows) {
+        const d = toISO(r.date);
+        const prev = byDateMap.get(d) || { shipments: 0, revenue: 0 };
+        prev.shipments += r.shipments;
+        prev.revenue += r.revenue;
+        byDateMap.set(d, prev);
+      }
+      const labels = Array.from(byDateMap.keys()).sort();
+      const seriesShip = labels.map(d => byDateMap.get(d).shipments);
+      const seriesRev = labels.map(d => byDateMap.get(d).revenue);
+
+      // Graf
+      const metric = document.getElementById('metric').value;
+      const datasets = [];
+      if (metric === 'both' || metric === 'shipments') {
+        datasets.push({
+          label: 'Počet zásilek',
+          data: seriesShip,
+          borderColor: '#0a66c2',
+          backgroundColor: 'rgba(10,102,194,0.15)',
+          tension: 0.2,
+          yAxisID: 'yShip'
+        });
+      }
+      if (metric === 'both' || metric === 'revenue') {
+        datasets.push({
+          label: 'Obrat (Kč)',
+          data: seriesRev,
+          borderColor: '#ff7f0e',
+          backgroundColor: 'rgba(255,127,14,0.15)',
+          tension: 0.2,
+          yAxisID: 'yRev'
+        });
+      }
+
+      const ctx = document.getElementById('chart');
+      if (chart) chart.destroy();
+      chart = new Chart(ctx, {
+        type: 'line',
+        data: { labels, datasets },
+        options: {
+          responsive: true,
+          interaction: { mode: 'index', intersect: false },
+          plugins: {
+            legend: { position: 'top' },
+            tooltip: {
+              callbacks: {
+                label: (item) => {
+                  if (item.dataset.label.includes('Obrat')) {
+                    return `${item.dataset.label}: ${fmtCZK.format(item.parsed.y)}`;
+                  }
+                  return `${item.dataset.label}: ${fmtInt.format(item.parsed.y)}`;
+                }
+              }
+            }
+          },
+          scales: {
+            x: { title: { text: 'Datum', display: true } },
+            yShip: {
+              type: 'linear',
+              position: 'left',
+              title: { text: 'Počet zásilek', display: true },
+              grid: { drawOnChartArea: true }
+            },
+            yRev: {
+              type: 'linear',
+              position: 'right',
+              title: { text: 'Obrat (Kč)', display: true },
+              grid: { drawOnChartArea: false }
+            }
+          }
+        }
+      });
+    }
+
+    // Detekce přítomnosti hlavičky v prvním řádku
+    function detectHeaderStart(rows) {
+      if (!rows.length) return 0;
+      const first = rows[0];
+      // Pokud třetí/čtvrtý sloupec nejsou čísla, pravděpodobně jde o hlavičku
+      const looksHeader =
+        first &&
+        first.length >= 4 &&
+        (typeof first[2] !== 'number' || typeof first[3] !== 'number');
+      return looksHeader ? 1 : 0;
+    }
+
+    // Pomocné funkce
+    function toISO(d) {
+      // YYYY-MM-DD
+      const yyyy = d.getFullYear();
+      const mm = String(d.getMonth() + 1).padStart(2, '0');
+      const dd = String(d.getDate()).padStart(2, '0');
+      return `${yyyy}-${mm}-${dd}`;
+    }
+    function escapeHtml(s) {
+      return String(s)
+        .replaceAll('&', '&amp;')
+        .replaceAll('<', '&lt;')
+        .replaceAll('>', '&gt;')
+        .replaceAll('"', '&quot;')
+        .replaceAll("'", '&#39;');
+    }
+    function resetUI() {
+      document.getElementById('error').textContent = '';
+      document.getElementById('supplier').innerHTML = '<option value="">— vyber —</option>';
+      document.getElementById('supplier').disabled = true;
+      document.querySelector('#table tbody').innerHTML = '';
+      document.getElementById('sumShipments').textContent = '0';
+      document.getElementById('sumRevenue').textContent = fmtCZK.format(0);
+      if (chart) { chart.destroy(); chart = null; }
+    }
+
     document.getElementById('year').textContent = new Date().getFullYear();
   </script>
 </body>
