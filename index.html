@@ -1,10 +1,14 @@
 
-<script>
-  console.log('XLSX:', typeof XLSX, 'Chart:', typeof Chart);
-  // Volitelné: zobraz i do stránky
-  const p = document.createElement('p');
-  p.textContent = 'XLSX: ' + (typeof XLSX) + ' · Chart: ' + (typeof Chart);
-  p.style.color = '#1565c0';
-  p.style.fontWeight = '600';
-  document.body.prepend(p);
-</script>
+  <!-- ... ostatní obsah stránky ... -->
+
+  <!-- Lokální knihovny (bez defer), na konci body -->
+  /web/vendor/xlsx.full.min.js</script>
+  /web/vendor/chart.umd.min.js</script>
+
+  <!-- Tvůj hlavní skript s logikou stránky -->
+  <script>
+    // Sem patří tvůj JS (ten dlouhý blok, co načítá Excel a kreslí graf)
+    // Může zůstat tak, jak ho máš – jen ať je až za knihovnami.
+  </script>
+</body>
+</html>
