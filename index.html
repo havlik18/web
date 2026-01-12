@@ -4,24 +4,31 @@
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1" />
-  <title>Reporty dodavatelů — Lukáš Havel (filtr + graf, fix přetékání)</title>
+  <title>Reporty dodavatelů — Excel (A: Dodavatel, B: Obrat 2024, C: Objednávky 2024, D: Obrat 2025, E: Objednávky 2025)</title>
 
   <style>
     :root {
       color-scheme: light dark;
       --bg: #f7f9fc; --bg2: #eef3fb; --text: #1f2937; --muted: #6b7280;
-      --card: #ffffff; --border: #e5e7eb; --primary: #1565c0; --primary-weak: rgba(21,101,192,0.12);
-      --warn: #ff7f0e; --warn-weak: rgba(255,127,14,0.12);
+      --card: #ffffff; --border: #e5e7eb; --primary: #1565c0;
       --radius: 14px; --shadow: 0 10px 24px rgba(31,41,55,.08);
+
+      /* Barvy pro zvýraznění v grafu */
+      --rev24: #89a6d8; /* obrat 2024 (tlumená modrá) */
+      --rev25: #1565c0; /* obrat 2025 (výrazná modrá) */
+      --ord24: #9bd386; /* objednávky 2024 (tlumená zelená) */
+      --ord25: #2f9e44; /* objednávky 2025 (výrazná zelená) */
     }
+
     html, body {
       height: 100%;
       background: linear-gradient(160deg, var(--bg), var(--bg2));
       color: var(--text);
-      font-family: system-ui,-apple-system,"Segoe UI",Roboto,Arial,sans-serif;
+      font-family: system-ui, -apple-system, "Segoe UI", Roboto, Arial, sans-serif;
       line-height: 1.6;
       margin: 0;
     }
+
     header { padding: 20px 24px 8px; }
     h1 { margin: 0; font-size: clamp(22px,3vw,28px); }
     .hint { color: var(--muted); font-size: 13px; margin: 6px 0 0; }
@@ -32,9 +39,8 @@
       gap: 18px;
       padding: 0 24px 24px;
     }
-    @media (min-width: 980px) { .grid { grid-template-columns: 380px 1fr; } } /* sidebar lehce širší */
-    /* Důležité: dovolí zmenšení obsahu bez přetékání */
-    .grid > *, .card, .control, .row { min-width: 0; }
+    @media (min-width: 980px) { .grid { grid-template-columns: 380px 1fr; } }
+    .grid > * { min-width: 0; }
 
     .card {
       background: var(--card);
@@ -42,12 +48,12 @@
       border-radius: var(--radius);
       box-shadow: var(--shadow);
       padding: 16px;
-      overflow: hidden; /* prevence přetékání */
+      overflow: hidden;
     }
     .card h2 { margin: 0 0 10px; font-size: clamp(18px,2.2vw,22px); }
 
     label { font-weight: 600; display: block; margin-bottom: 6px; }
-    select, input[type="file"], input[type="date"] {
+    select, input[type="file"] {
       width: 100%;
       max-width: 100%;
       box-sizing: border-box;
@@ -66,9 +72,8 @@
       background: var(--primary);
       color: #fff;
       cursor: pointer;
-      white-space: nowrap; /* neházet se na nový řádek */
+      white-space: nowrap;
     }
-    /* Fallback pro WebKit */
     input[type="file"]::-webkit-file-upload-button {
       padding: 8px 12px;
       margin-right: 8px;
@@ -80,118 +85,91 @@
       white-space: nowrap;
     }
 
-    .file-control { overflow: hidden; } /* pojistka pro file input */
+    .file-control { overflow: hidden; }
 
-    .row {
-      display: grid;
-      grid-template-columns: 1fr 1fr;
-      gap: 10px;
+    .btn {
+      display: inline-block;
+      padding: 8px 12px;
+      border-radius: 10px;
+      border: 1px solid var(--border);
+      background: #fff;
+      cursor: pointer;
+      white-space: nowrap;
     }
-    /* V úzkých oknech dej datumy pod sebe (lepší než přetékání) */
-    @media (max-width: 420px) {
-      .row { grid-template-columns: 1fr; }
+    .btn-primary {
+      background: var(--primary);
+      color: #fff;
+      border-color: var(--primary);
     }
-
-    .btn { display: inline-block; padding: 8px 12px; border-radius: 10px; border: 1px solid var(--border); background: #fff; cursor: pointer; white-space: nowrap; }
-    .btn-primary { background: var(--primary); color: #fff; border-color: var(--primary); }
 
     table { width: 100%; border-collapse: collapse; margin-top: 10px; table-layout: auto; }
-    thead th { background: var(--primary-weak); padding: 8px 10px; border-bottom: 1px solid var(--border); }
+    thead th { background: rgba(21,101,192,0.12); padding: 8px 10px; border-bottom: 1px solid var(--border); }
     tbody td, tfoot td { border-top: 1px solid var(--border); padding: 8px 10px; font-size: 14px; word-break: break-word; }
     tbody tr:hover { background: rgba(0,0,0,0.03); }
 
-    .error { color: #b00020; }
-    .ok { color: #1565c0; font-weight: 600; }
     .chart-wrap { border: 1px solid var(--border); border-radius: var(--radius); padding: 12px; background: #fff; }
+    .muted { color: var(--muted); font-size: 13px; }
+    .error { color: #b00020; }
   </style>
 </head>
 <body>
   <header>
-    <h1>Reporty dodavatelů — filtr datumu + graf</h1>
-    <p class="hint">Nahraj Excel (.xls/.xlsx), vyber dodavatele a filtruj období.</p>
+    <h1>Reporty dodavatelů — Excel (2024 vs 2025)</h1>
+    <p class="hint">Načti Excel (.xls/.xlsx) se sloupci: <strong>A</strong> Dodavatel, <strong>B</strong> Obrat 2024, <strong>C</strong> Objednávky 2024, <strong>D</strong> Obrat 2025, <strong>E</strong> Objednávky 2025.</p>
     <p id="libStatus" class="hint"></p>
   </header>
 
   <div class="grid">
-    <!-- Ovládání -->
+    <!-- OVLÁDACÍ PANEL -->
     <aside class="card">
       <h2>Ovládací panel</h2>
 
-      <!-- Nahrání souboru -->
       <div class="control">
-        <label for="file">1) Nahrát Excel (.xls / .xlsx)</label>
+        <label for="file">Nahrát Excel (.xls / .xlsx)</label>
         <div class="file-control">
           <input type="file" id="file" accept=".xls,.xlsx" />
         </div>
-        <div id="fileInfo" class="hint" style="margin-top:6px"></div>
+        <div id="fileInfo" class="muted" style="margin-top:6px"></div>
         <div id="error" class="error" style="margin-top:6px"></div>
       </div>
 
-      <!-- Dodavatel -->
-      <div class="control">
-        <label for="supplier">2) Vyber dodavatele</label>
-        <select id="supplier" disabled>
+      <div class="control" style="margin-top:10px">
+        <label for="supplierSel">Vyber dodavatele</label>
+        <select id="supplierSel" disabled>
           <option value="">— nejprve nahraj soubor —</option>
         </select>
       </div>
 
-      <!-- Filtr datumu (od–do) -->
-      <div class="control">
-        <label>3) Filtr období</label>
-        <div class="row">
-          <div>
-            <label for="dateFrom" style="font-weight:500">Datum od</label>
-            <input type="date" id="dateFrom" />
-          </div>
-          <div>
-            <label for="dateTo" style="font-weight:500">Datum do</label>
-            <input type="date" id="dateTo" />
-          </div>
-        </div>
-        <div style="margin-top:8px; display:flex; gap:8px; flex-wrap:wrap;">
-          <button id="applyFilterBtn" class="btn btn-primary">Použít filtr</button>
-          <button id="clearFilterBtn" class="btn">Vyčistit filtr</button>
-        </div>
-        <div id="filterInfo" class="hint" style="margin-top:6px"></div>
+      <div style="margin-top:10px; display:flex; gap:8px; flex-wrap:wrap;">
+        <button id="exportBtn" class="btn">Export CSV (tabulka)</button>
+        <button id="resetBtn" class="btn">Reset</button>
       </div>
 
-      <!-- Metriky -->
-      <div class="control">
-        <label for="metric">4) Zobrazit metriky</label>
-        <select id="metric">
-          <option value="both" selected>Počet zásilek + Obrat</option>
-          <option value="shipments">Pouze počet zásilek</option>
-          <option value="revenue">Pouze obrat</option>
-        </select>
-      </div>
-
-      <p class="hint">Pozn.: Pokud první řádek jsou hlavičky, automaticky je přeskočíme.</p>
+      <p class="muted" style="margin-top:10px">Pozn.: První řádek s textovými hlavičkami automaticky vynecháme.</p>
     </aside>
 
-    <!-- Data + graf -->
+    <!-- DATA + GRAF -->
     <main class="card">
-      <h2>Graf dodavatele</h2>
+      <h2>Graf 2024 vs 2025 (zvýrazněný 2025)</h2>
       <div class="chart-wrap"><canvas id="chart" height="140"></canvas></div>
+      <p class="muted" style="margin-top:6px">
+        Legenda: <span style="color:var(--rev24)">Obrat 2024</span>, <span style="color:var(--rev25)">Obrat 2025</span>,
+        <span style="color:var(--ord24)">Objednávky 2024</span>, <span style="color:var(--ord25)">Objednávky 2025</span>.
+      </p>
 
       <h2 style="margin-top:14px">Tabulka dat</h2>
-      <div class="hint" id="tableInfo"></div>
+      <div class="muted" id="tableInfo"></div>
       <table id="table">
         <thead>
           <tr>
             <th>Dodavatel</th>
-            <th>Datum</th>
-            <th style="text-align:right">Počet zásilek</th>
-            <th style="text-align:right">Obrat</th>
+            <th style="text-align:right">Obrat 2024</th>
+            <th style="text-align:right">Objednávky 2024</th>
+            <th style="text-align:right">Obrat 2025</th>
+            <th style="text-align:right">Objednávky 2025</th>
           </tr>
         </thead>
         <tbody></tbody>
-        <tfoot>
-          <tr>
-            <td colspan="2" style="font-weight:700">Součet</td>
-            <td id="sumShipments" style="text-align:right">0</td>
-            <td id="sumRevenue" style="text-align:right">0</td>
-          </tr>
-        </tfoot>
       </table>
     </main>
   </div>
@@ -199,40 +177,40 @@
   <!-- Lokální knihovny (musí existovat v /web/vendor/) -->
   <script src="/web/vendor/xlsx.full.min.js"
           onload="document.getElementById('libStatus').textContent += 'SheetJS: OK ';"
-          onerror="document.getElementById('libStatuserror="document.getElementById('libStatus').textContent += 'Chart.js: CH 'currency', currency: 'CZK' });
+          onerror="document.getElementById('libStatus').textContent   const fmtCZK = new Intl.NumberFormat('cs-CZ', { style: 'currency', currency: 'CZK' });
 
-    let allRows = [];    // { supplier, date: Date, shipments: number, revenue: number }
-    let chart;           // Chart.js instance
-    let dateFrom = null; // Date | null
-    let dateTo = null;   // Date | null
+    // Data: { name, rev24, ord24, rev25, ord25 }
+    let suppliers = [];
+    let chart;
 
+    const fileEl = document.getElementById('file');
+    const fileInfoEl = document.getElementById('fileInfo');
+    const errorEl = document.getElementById('error');
+    const selEl = document.getElementById('supplierSel');
+    const tableInfoEl = document.getElementById('tableInfo');
+    const tbodyEl = document.querySelector('#table tbody');
+    const exportBtn = document.getElementById('exportBtn');
+    const resetBtn = document.getElementById('resetBtn');
+    const chartCanvas = document.getElementById('chart');
+
+    // Stav knihoven (pro klid duše)
     (function showTypes(){
       const status = 'XLSX: ' + (typeof window.XLSX) + ' · Chart: ' + (typeof window.Chart);
       const el = document.getElementById('libStatus');
       el.textContent = status;
-      el.className = (typeof XLSX !== 'undefined' && typeof Chart !== 'undefined') ? 'ok' : 'error';
+      el.className = (typeof XLSX !== 'undefined' && typeof Chart !== 'undefined') ? 'hint' : 'error';
     })();
 
-    function excelSerialToDate(serial) {
-      const utcDays = serial - 25569;
-      return new Date(utcDays * 86400 * 1000);
-    }
-    function detectHeaderStart(rows) {
-      if (!rows.length) return 0;
-      const first = rows[0];
-      const looksHeader = first && first.length >= 4 &&
-                          (typeof first[2] !== 'number' || typeof first[3] !== 'number');
-      return looksHeader ? 1 : 0;
-    }
-
-    document.getElementById('file').addEventListener('change', async (e) => {
+    // Načtení Excelu
+    fileEl.addEventListener('change', async (e) => {
       resetUI();
       const file = e.target.files?.[0];
       if (!file) return;
-      document.getElementById('fileInfo').textContent = `Soubor: ${file.name} (${fmtInt.format(file.size)} B)`;
+
+      fileInfoEl.textContent = `Soubor: ${file.name} (${fmtInt.format(file.size)} B)`;
 
       try {
-        if (typeof XLSX === 'undefined') throw new Error('XLSX není načtená');
+        if (typeof XLSX === 'undefined') throw new Error('Knihovna XLSX není načtená');
 
         const arrayBuffer = await file.arrayBuffer();
         const wb = XLSX.read(arrayBuffer, { type: 'array', cellDates: true });
@@ -241,68 +219,198 @@
         const rows = XLSX.utils.sheet_to_json(ws, { header: 1, raw: true });
 
         const startIdx = detectHeaderStart(rows);
-        allRows = [];
+        suppliers = [];
+
         for (let i = startIdx; i < rows.length; i++) {
           const r = rows[i];
-          if (!r || r.length < 4) continue;
-          const supplier = String(r[0] ?? '').trim();
-          const dateVal = r[1];
-          let shipments = Number(r[2]);
-          let revenue = Number(r[3]);
+          if (!r || r.length < 5) continue;
 
-          let date;
-          if (dateVal instanceof Date) date = dateVal;
-          else if (typeof dateVal === 'number') date = excelSerialToDate(dateVal);
-          else if (typeof dateVal === 'string') date = new Date(dateVal);
+          const name  = String(r[0] ?? '').trim();
+          const rev24 = toNum(r[1]);
+          const ord24 = toNum(r[2]);
+          const rev25 = toNum(r[3]);
+          const ord25 = toNum(r[4]);
 
-          if (!supplier || isNaN(date?.getTime())) continue;
-          shipments = isNaN(shipments) ? 0 : shipments;
-          revenue = isNaN(revenue) ? 0 : revenue;
+          if (!name) continue;
 
-          allRows.push({ supplier, date, shipments, revenue });
+          suppliers.push({ name, rev24, ord24, rev25, ord25 });
         }
 
-        allRows.sort((a, b) => a.date - b.date);
+        // Naplnit tabulku
+        renderTable();
 
-        const suppliers = Array.from(new Set(allRows.map(r => r.supplier)))
-          .sort((a,b)=>a.localeCompare(b,'cs'));
-        const sel = document.getElementById('supplier');
-        sel.innerHTML = '<option value="">— vyber —</option>' +
-          suppliers.map(s => `<option value="${escapeHtml(s)}">${escapeHtml(s)}</option>`).join('');
-        sel.disabled = suppliers.length === 0;
+        // Naplnit select
+        selEl.innerHTML = '<option value="">— vyber —</option>' +
+          suppliers.map(s => `<option value="${escapeHtml(s.name)}">${escapeHtml(s.name)}</option>`).join('');
+        selEl.disabled = suppliers.length === 0;
 
-        document.getElementById('tableInfo').textContent =
-          `Načteno řádků: ${fmtInt.format(allRows.length)} · List: ${sheetName}`;
+        tableInfoEl.textContent = `Načteno dodavatelů: ${fmtInt.format(suppliers.length)} · List: ${sheetName}`;
 
-        // Nastavit implicitní rozsah dat (min/max) do date pickerů
-        const minDate = allRows.length ? allRows[0].date : null;
-        const maxDate = allRows.length ? allRows[allRows.length - 1].date : null;
-        if (minDate && maxDate) {
-          document.getElementById('dateFrom').value = toISO(minDate);
-          document.getElementById('dateTo').value = toISO(maxDate);
-          dateFrom = minDate;
-          dateTo = maxDate;
-          document.getElementById('filterInfo').textContent =
-            `Období: ${toISO(minDate)} → ${toISO(maxDate)}`;
+        // Pokud máme data, vykresli první dodavatel automaticky
+        if (suppliers.length > 0) {
+          selEl.value = suppliers[0].name;
+          renderChart();
         }
 
       } catch (err) {
         console.error(err);
-        document.getElementById('error').textContent =
-          'Nepodařilo se načíst soubor. Zkontroluj formát XLS/XLSX a sloupce A–D.';
+        errorEl.textContent = 'Nepodařilo se načíst soubor. Zkontroluj, že jde o XLS/XLSX s požadovanými sloupci (A–E).';
       }
     });
 
-    document.getElementById('supplier').addEventListener('change', renderView);
-    document.getElementById('metric').addEventListener('change', renderView);
+    // Změna dodavatele → graf
+    selEl.addEventListener('change', renderChart);
 
-    document.getElementById('applyFilterBtn').addEventListener('click', () => {
-      const df = document.getElementById('dateFrom').value;
-      const dt = document.getElementById('dateTo').value;
-      dateFrom = df ? new Date(df + 'T00:00:00') : null;
-      dateTo   = dt ? new Date(dt + 'T23:59:59') : null;
-      renderView();
+    // Export CSV tabulky
+    exportBtn.addEventListener('click', () => {
+      if (!suppliers.length) return alert('Tabulka je prázdná.');
+      const header = ['Dodavatel','Obrat 2024','Objednávky 2024','Obrat 2025','Objednávky 2025'];
+      const csv = [header.join(',')]
+        .concat(
+          suppliers.map(s => [
+            '"' + s.name.replace(/"/g,'""') + '"',
+            s.rev24, s.ord24, s.rev25, s.ord25
+          ].join(','))
+        )
+        .join('\n');
+
+      const blob = new Blob([csv], { type: 'text/csv;charset=utf-8;' });
+      const url = URL.createObjectURL(blob);
+      const a = document.createElement('a');
+      a.href = url;
+      a.download = 'dodavatele_2024_2025.csv';
+      document.body.appendChild(a); a.click(); document.body.removeChild(a);
+      URL.revokeObjectURL(url);
     });
-    document.getElementById('clearFilterBtn').addEventListener('click', () => {
-      document.getElementById('dateFrom').value = '';
-      document.getElementById('dateTo').value   = '';
+
+    // Reset UI
+    resetBtn.addEventListener('click', () => {
+      fileEl.value = '';
+      resetUI();
+    });
+
+    // ----------------- Render pomocné funkce -----------------
+
+    function renderTable() {
+      tbodyEl.innerHTML = suppliers.map(s => `
+        <tr>
+          <td>${escapeHtml(s.name)}</td>
+          <td style="text-align:right">${fmtCZK.format(s.rev24)}</td>
+          <td style="text-align:right">${fmtInt.format(s.ord24)}</td>
+          <td style="text-align:right">${fmtCZK.format(s.rev25)}</td>
+          <td style="text-align:right">${fmtInt.format(s.ord25)}</td>
+        </tr>
+      `).join('');
+    }
+
+    function renderChart() {
+      const name = selEl.value;
+      if (!name) return;
+      const s = suppliers.find(x => x.name === name);
+      if (!s) return;
+
+      const labels = ['2024', '2025'];
+
+      // Obrat: 2024 tlumeně, 2025 výrazně
+      const dsRevenue = {
+        type: 'bar',
+        label: 'Obrat (Kč)',
+        data: [s.rev24, s.rev25],
+        backgroundColor: [getCSS('--rev24'), getCSS('--rev25')],
+        borderColor: [getCSS('--rev24'), getCSS('--rev25')],
+        borderWidth: [1, 2],
+        yAxisID: 'yRev'
+      };
+
+      // Objednávky: 2024 tlumeně, 2025 výrazně
+      const dsOrders = {
+        type: 'bar',
+        label: 'Objednávky (ks)',
+        data: [s.ord24, s.ord25],
+        backgroundColor: [getCSS('--ord24'), getCSS('--ord25')],
+        borderColor: [getCSS('--ord24'), getCSS('--ord25')],
+        borderWidth: [1, 2],
+        yAxisID: 'yOrd'
+      };
+
+      if (chart) chart.destroy();
+      chart = new Chart(chartCanvas, {
+        data: { labels, datasets: [dsRevenue, dsOrders] },
+        options: {
+          responsive: true,
+          plugins: {
+            legend: { position: 'top' },
+            tooltip: {
+              callbacks: {
+                label: (item) => {
+                  const isRev = item.dataset.label.includes('Obrat');
+                  const v = item.parsed.y;
+                  return isRev ? `${item.dataset.label}: ${fmtCZK.format(v)}`
+                               : `${item.dataset.label}: ${fmtInt.format(v)}`;
+                }
+              }
+            },
+            title: { display: true, text: `Dodavatel: ${name} — srovnání 2024 vs 2025` }
+          },
+          scales: {
+            x: { title: { text: 'Rok', display: true } },
+            yRev: {
+              type: 'linear', position: 'left',
+              title: { display: true, text: 'Obrat (Kč)' },
+              grid: { drawOnChartArea: true }
+            },
+            yOrd: {
+              type: 'linear', position: 'right',
+              title: { display: true, text: 'Objednávky (ks)' },
+              grid: { drawOnChartArea: false }
+            }
+          }
+        }
+      });
+    }
+
+    // ----------------- Utility -----------------
+
+    function detectHeaderStart(rows) {
+      if (!rows.length) return 0;
+      const f = rows[0];
+      // pokud B–E nejsou čísla, pravděpodobně hlavička → přeskočit
+      const looksHeader =
+        f && f.length >= 5 &&
+        (typeof f[1] !== 'number' || typeof f[2] !== 'number' || typeof f[3] !== 'number' || typeof f[4] !== 'number');
+      return looksHeader ? 1 : 0;
+    }
+
+    function toNum(val) {
+      if (typeof val === 'number') return val;
+      if (val == null) return 0;
+      const s = String(val).replace(/[^\d,.\- ]/g, '').replace(/\s+/g, '');
+      // české čárky → tečka
+      const normalized = s.replace(/,/g, '.');
+      const num = parseFloat(normalized);
+      return isNaN(num) ? 0 : num;
+    }
+
+    function escapeHtml(s) {
+      return String(s)
+        .replaceAll('&','&amp;').replaceAll('<','&lt;').replaceAll('>','&gt;')
+        .replaceAll('"','&quot;').replaceAll("'",'&#39;');
+    }
+
+    function getCSS(varName) {
+      return getComputedStyle(document.documentElement).getPropertyValue(varName).trim();
+    }
+
+    function resetUI() {
+      suppliers = [];
+      selEl.innerHTML = '<option value="">— nejprve nahraj soubor —</option>';
+      selEl.disabled = true;
+      tbodyEl.innerHTML = '';
+      tableInfoEl.textContent = '';
+      errorEl.textContent = '';
+      fileInfoEl.textContent = '';
+      if (chart) { chart.destroy(); chart = null; }
+    }
+  </script>
+</body>
+</html>
