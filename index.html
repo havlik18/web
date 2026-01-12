@@ -1,4 +1,10 @@
 
-<!-- Správně: každý soubor má svůj vlastní <script> -->
-<script src=</script>
-/web/vendor/chart.umd.min.js</script>
+<script>
+  console.log('XLSX:', typeof XLSX, 'Chart:', typeof Chart);
+  // Volitelné: zobraz i do stránky
+  const p = document.createElement('p');
+  p.textContent = 'XLSX: ' + (typeof XLSX) + ' · Chart: ' + (typeof Chart);
+  p.style.color = '#1565c0';
+  p.style.fontWeight = '600';
+  document.body.prepend(p);
+</script>
