@@ -1,6 +1,79 @@
 
-<!-- XLSX dočasně z CDN (test) -->
-https://unpkg.com/xlsx@0.18.5/dist/xlsx.full.min.js</script>
+<!DOCTYPE html>
+<html lang="cs">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>Reporty dodavatelů — Excel (A: Dodavatel, B: Obrat 2024, C: Objednávky 2024, D: Obrat 2025, E: Objednávky 2025)</title>
 
-<!-- Chart.js zůstává lokální -->
-/web/vendor/chart.umd.min.js</script>
+  <style>
+    :root{
+      color-scheme: light dark;
+      --bg:#f7f9fc; --bg2:#eef3fb; --text:#1f2937; --muted:#6b7280;
+      --card:#fff; --border:#e5e7eb; --primary:#1565c0;
+      --radius:14px; --shadow:0 10px 24px rgba(31,41,55,.08);
+
+      /* barvy grafu (2025 zvýrazněn) */
+      --rev24:#89a6d8;  /* obrat 2024 tlumeně modrá */
+      --rev25:#1565c0;  /* obrat 2025 výrazná modrá */
+      --ord24:#9bd386;  /* objednávky 2024 tlumeně zelená */
+      --ord25:#2f9e44;  /* objednávky 2025 výrazná zelená */
+
+      --kpiUp:#16a34a; --kpiDown:#dc2626; --kpiBg:#f1f5f9;
+    }
+    html,body{height:100%;background:linear-gradient(160deg,var(--bg),var(--bg2));color:var(--text);
+      font-family:system-ui,-apple-system,"Segoe UI",Roboto,Arial,sans-serif;line-height:1.6;margin:0}
+    header{padding:20px 24px 8px}
+    h1{margin:0;font-size:clamp(22px,3vw,28px)}
+    .hint{color:var(--muted);font-size:13px;margin:6px 0 0}
+
+    .grid{display:grid;grid-template-columns:1fr;gap:18px;padding:0 24px 24px}
+    @media(min-width:980px){.grid{grid-template-columns:380px 1fr}}
+    .grid>*{min-width:0}
+
+    .card{background:var(--card);border:1px solid var(--border);border-radius:var(--radius);
+      box-shadow:var(--shadow);padding:16px;overflow:hidden}
+    .card h2{margin:0 0 10px;font-size:clamp(18px,2.2vw,22px)}
+    label{font-weight:600;display:block;margin-bottom:6px}
+
+    /* ovládací prvky */
+    select,input[type="file"]{width:100%;max-width:100%;box-sizing:border-box;padding:10px 12px;
+      border-radius:10px;border:1px solid var(--border);background:#fff}
+    input[type="file"]{appearance:auto}
+    input[type="file"]::file-selector-button,
+    input[type="file"]::-webkit-file-upload-button{
+      padding:8px 12px;margin-right:8px;border-radius:10px;border:1px solid var(--primary);
+      background:var(--primary);color:#fff;cursor:pointer;white-space:nowrap
+    }
+    .file-control{overflow:hidden}
+
+    .btn{display:inline-block;padding:8px 12px;border-radius:10px;border:1px solid var(--border);
+      background:#fff;cursor:pointer;white-space:nowrap}
+    .btn-primary{background:var(--primary);color:#fff;border-color:var(--primary)}
+
+    /* tabulka */
+    table{width:100%;border-collapse:collapse;margin-top:10px;table-layout:auto}
+    thead th{background:rgba(21,101,192,.12);padding:8px 10px;border-bottom:1px solid var(--border)}
+    tbody td,tfoot td{border-top:1px solid var(--border);padding:8px 10px;font-size:14px;word-break:break-word}
+    tbody tr:hover{background:rgba(0,0,0,.03)}
+
+    .chart-wrap{border:1px solid var(--border);border-radius:var(--radius);padding:12px;background:#fff}
+    .muted{color:var(--muted);font-size:13px}
+    .error{color:#b00020}
+    .status{font-size:13px;padding:8px 10px;border:1px dashed var(--border);border-radius:10px;background:rgba(0,0,0,.03)}
+
+    /* KPI box */
+    .kpis{display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-top:10px}
+    @media(max-width:520px){.kpis{grid-template-columns:1fr}}
+    .kpi{background:var(--kpiBg);border:1px solid var(--border);border-radius:12px;padding:10px}
+    .kpi h3{margin:0 0 6px;font-size:14px;color:var(--muted)}
+    .kpi .val{font-size:18px;font-weight:700}
+    .kpi .delta{font-size:13px;margin-top:4px}
+    .delta.up{color:var(--kpiUp)} .delta.down{color:var(--kpiDown)}
+  </style>
+</head>
+<body>
+  <header>
+    <h1>Reporty dodavatelů — Excel (2024 vs 2025)</h1>
+    <p class="hint">Očekávané sloupce: <strong>A</strong> Dodavatel, <strong>B</strong> Obrat 2024, <strong>C</strong> Objednávky 2024, <strong>D</strong> Obrat 2025, <strong>E</strong> Objednávky 2025.</p>
+    <p id="libStatus" class="hint"></p>
