@@ -159,3 +159,53 @@
       const first = rows[0];
       const looksHeader = first && first.length >= 4 &&
                           (typeof first[2] !== 'number' || typeof first[3] !== 'number');
+      return looksHeader ? 1 : 0;
+    }
+
+    // --- Událost: nahrání souboru ---
+    document.getElementById('file').addEventListener('change', async (e) => {
+      resetUI();
+      const file = e.target.files?.[0];
+      if (!file) return;
+      document.getElementById('fileInfo').textContent = `Soubor: ${file.name} (${fmtInt.format(file.size)} B)`;
+
+      try {
+        if (typeof XLSX === 'undefined') throw new Error('XLSX není načtená');
+
+        const arrayBuffer = await file.arrayBuffer();
+        const wb = XLSX.read(arrayBuffer, { type: 'array', cellDates: true });
+        const sheetName = wb.SheetNames[0];
+        const ws = wb.Sheets[sheetName];
+        const rows = XLSX.utils.sheet_to_json(ws, { header: 1, raw: true });
+
+        const startIdx = detectHeaderStart(rows);
+        allRows = [];
+        for (let i = startIdx; i < rows.length; i++) {
+          const r = rows[i];
+          if (!r || r.length < 4) continue;
+          const supplier = String(r[0] ?? '').trim();
+          const dateVal = r[1];
+          let shipments = Number(r[2]);
+          let revenue = Number(r[3]);
+
+          let date;
+          if (dateVal instanceof Date) date = dateVal;
+          else if (typeof dateVal === 'number') date = excelSerialToDate(dateVal);
+          else if (typeof dateVal === 'string') date = new Date(dateVal);
+
+          if (!supplier || isNaN(date?.getTime())) continue;
+          shipments = isNaN(shipments) ? 0 : shipments;
+          revenue = isNaN(revenue) ? 0 : revenue;
+
+          allRows.push({ supplier, date, shipments, revenue });
+        }
+
+        allRows.sort((a, b) => a.date - b.date);
+
+        const suppliers = Array.from(new Set(allRows.map(r => r.supplier)))
+          .sort((a,b)=>a.localeCompare(b,'cs'));
+        const sel = document.getElementById('supplier');
+        sel.innerHTML = '<option value="">— vyber —</option>' +
+          suppliers.map(s => `<option value="${escapeHtml(s)}">${escapeHtml(s)}</option>`).join('');
+        sel.disabled = suppliers.length === 0;
+
