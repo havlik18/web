@@ -13,11 +13,11 @@
       --card: #ffffff; --border: #e5e7eb; --primary: #1565c0;
       --radius: 14px; --shadow: 0 10px 24px rgba(31,41,55,.08);
 
-      /* Barvy pro zvýraznění v grafu */
-      --rev24: #89a6d8; /* obrat 2024 (tlumená modrá) */
-      --rev25: #1565c0; /* obrat 2025 (výrazná modrá) */
-      --ord24: #9bd386; /* objednávky 2024 (tlumená zelená) */
-      --ord25: #2f9e44; /* objednávky 2025 (výrazná zelená) */
+      /* Barvy grafu (2025 výraznější) */
+      --rev24: #89a6d8;
+      --rev25: #1565c0;
+      --ord24: #9bd386;
+      --ord25: #2f9e44;
     }
 
     html, body {
@@ -25,20 +25,14 @@
       background: linear-gradient(160deg, var(--bg), var(--bg2));
       color: var(--text);
       font-family: system-ui, -apple-system, "Segoe UI", Roboto, Arial, sans-serif;
-      line-height: 1.6;
-      margin: 0;
+      line-height: 1.6; margin: 0;
     }
 
     header { padding: 20px 24px 8px; }
     h1 { margin: 0; font-size: clamp(22px,3vw,28px); }
     .hint { color: var(--muted); font-size: 13px; margin: 6px 0 0; }
 
-    .grid {
-      display: grid;
-      grid-template-columns: 1fr;
-      gap: 18px;
-      padding: 0 24px 24px;
-    }
+    .grid { display: grid; grid-template-columns: 1fr; gap: 18px; padding: 0 24px 24px; }
     @media (min-width: 980px) { .grid { grid-template-columns: 380px 1fr; } }
     .grid > * { min-width: 0; }
 
@@ -47,60 +41,24 @@
       border: 1px solid var(--border);
       border-radius: var(--radius);
       box-shadow: var(--shadow);
-      padding: 16px;
-      overflow: hidden;
+      padding: 16px; overflow: hidden;
     }
     .card h2 { margin: 0 0 10px; font-size: clamp(18px,2.2vw,22px); }
 
     label { font-weight: 600; display: block; margin-bottom: 6px; }
     select, input[type="file"] {
-      width: 100%;
-      max-width: 100%;
-      box-sizing: border-box;
-      padding: 10px 12px;
-      border-radius: 10px;
-      border: 1px solid var(--border);
-      background: #fff;
+      width: 100%; max-width: 100%; box-sizing: border-box;
+      padding: 10px 12px; border-radius: 10px; border: 1px solid var(--border); background: #fff;
     }
-
-    /* Hezké tlačítko uvnitř file inputu + menší mezera (nepřetéká) */
-    input[type="file"]::file-selector-button {
-      padding: 8px 12px;
-      margin-right: 8px;
-      border-radius: 10px;
-      border: 1px solid var(--primary);
-      background: var(--primary);
-      color: #fff;
-      cursor: pointer;
-      white-space: nowrap;
-    }
+    input[type="file"]::file-selector-button,
     input[type="file"]::-webkit-file-upload-button {
-      padding: 8px 12px;
-      margin-right: 8px;
-      border-radius: 10px;
-      border: 1px solid var(--primary);
-      background: var(--primary);
-      color: #fff;
-      cursor: pointer;
-      white-space: nowrap;
+      padding: 8px 12px; margin-right: 8px; border-radius: 10px;
+      border: 1px solid var(--primary); background: var(--primary); color: #fff; cursor: pointer; white-space: nowrap;
     }
-
     .file-control { overflow: hidden; }
 
-    .btn {
-      display: inline-block;
-      padding: 8px 12px;
-      border-radius: 10px;
-      border: 1px solid var(--border);
-      background: #fff;
-      cursor: pointer;
-      white-space: nowrap;
-    }
-    .btn-primary {
-      background: var(--primary);
-      color: #fff;
-      border-color: var(--primary);
-    }
+    .btn { display: inline-block; padding: 8px 12px; border-radius: 10px; border: 1px solid var(--border); background: #fff; cursor: pointer; white-space: nowrap; }
+    .btn-primary { background: var(--primary); color: #fff; border-color: var(--primary); }
 
     table { width: 100%; border-collapse: collapse; margin-top: 10px; table-layout: auto; }
     thead th { background: rgba(21,101,192,0.12); padding: 8px 10px; border-bottom: 1px solid var(--border); }
@@ -110,6 +68,7 @@
     .chart-wrap { border: 1px solid var(--border); border-radius: var(--radius); padding: 12px; background: #fff; }
     .muted { color: var(--muted); font-size: 13px; }
     .error { color: #b00020; }
+    .status { font-size: 13px; padding: 8px 10px; border: 1px dashed var(--border); border-radius: 10px; background: rgba(0,0,0,0.03); }
   </style>
 </head>
 <body>
@@ -130,6 +89,7 @@
           <input type="file" id="file" accept=".xls,.xlsx" />
         </div>
         <div id="fileInfo" class="muted" style="margin-top:6px"></div>
+        <div id="status" class="status" style="margin-top:6px">Stav: čekám na soubor…</div>
         <div id="error" class="error" style="margin-top:6px"></div>
       </div>
 
@@ -176,8 +136,12 @@
 
   <!-- Lokální knihovny (musí existovat v /web/vendor/) -->
   <script src="/web/vendor/xlsx.full.min.js"
-          onload="document.getElementById('libStatus').textContent += 'SheetJS: OK ';"
-          onerror="document.getElementById('libStatus').textContent   const fmtCZK = new Intl.NumberFormat('cs-CZ', { style: 'currency', currency: 'CZK' });
+          onload="document/script>
+
+  <!-- Hlavní logika -->
+  <script>
+    const fmtInt = new Intl.NumberFormat('cs-CZ', { maximumFractionDigits: 0 });
+    const fmtCZK = new Intl.NumberFormat('cs-CZ', { style: 'currency', currency: 'CZK' });
 
     // Data: { name, rev24, ord24, rev25, ord25 }
     let suppliers = [];
@@ -185,6 +149,7 @@
 
     const fileEl = document.getElementById('file');
     const fileInfoEl = document.getElementById('fileInfo');
+    const statusEl = document.getElementById('status');
     const errorEl = document.getElementById('error');
     const selEl = document.getElementById('supplierSel');
     const tableInfoEl = document.getElementById('tableInfo');
@@ -193,7 +158,7 @@
     const resetBtn = document.getElementById('resetBtn');
     const chartCanvas = document.getElementById('chart');
 
-    // Stav knihoven (pro klid duše)
+    // Stav knihoven
     (function showTypes(){
       const status = 'XLSX: ' + (typeof window.XLSX) + ' · Chart: ' + (typeof window.Chart);
       const el = document.getElementById('libStatus');
@@ -201,18 +166,19 @@
       el.className = (typeof XLSX !== 'undefined' && typeof Chart !== 'undefined') ? 'hint' : 'error';
     })();
 
-    // Načtení Excelu
+    // Po výběru souboru ihned načítáme (není potřeba extra tlačítko)
     fileEl.addEventListener('change', async (e) => {
-      resetUI();
+      clearMessages();
       const file = e.target.files?.[0];
       if (!file) return;
 
       fileInfoEl.textContent = `Soubor: ${file.name} (${fmtInt.format(file.size)} B)`;
+      statusEl.textContent = 'Stav: načítám a zpracovávám…';
 
       try {
         if (typeof XLSX === 'undefined') throw new Error('Knihovna XLSX není načtená');
-
         const arrayBuffer = await file.arrayBuffer();
+
         const wb = XLSX.read(arrayBuffer, { type: 'array', cellDates: true });
         const sheetName = wb.SheetNames[0];
         const ws = wb.Sheets[sheetName];
@@ -232,185 +198,9 @@
           const ord25 = toNum(r[4]);
 
           if (!name) continue;
-
           suppliers.push({ name, rev24, ord24, rev25, ord25 });
         }
 
-        // Naplnit tabulku
         renderTable();
 
-        // Naplnit select
         selEl.innerHTML = '<option value="">— vyber —</option>' +
-          suppliers.map(s => `<option value="${escapeHtml(s.name)}">${escapeHtml(s.name)}</option>`).join('');
-        selEl.disabled = suppliers.length === 0;
-
-        tableInfoEl.textContent = `Načteno dodavatelů: ${fmtInt.format(suppliers.length)} · List: ${sheetName}`;
-
-        // Pokud máme data, vykresli první dodavatel automaticky
-        if (suppliers.length > 0) {
-          selEl.value = suppliers[0].name;
-          renderChart();
-        }
-
-      } catch (err) {
-        console.error(err);
-        errorEl.textContent = 'Nepodařilo se načíst soubor. Zkontroluj, že jde o XLS/XLSX s požadovanými sloupci (A–E).';
-      }
-    });
-
-    // Změna dodavatele → graf
-    selEl.addEventListener('change', renderChart);
-
-    // Export CSV tabulky
-    exportBtn.addEventListener('click', () => {
-      if (!suppliers.length) return alert('Tabulka je prázdná.');
-      const header = ['Dodavatel','Obrat 2024','Objednávky 2024','Obrat 2025','Objednávky 2025'];
-      const csv = [header.join(',')]
-        .concat(
-          suppliers.map(s => [
-            '"' + s.name.replace(/"/g,'""') + '"',
-            s.rev24, s.ord24, s.rev25, s.ord25
-          ].join(','))
-        )
-        .join('\n');
-
-      const blob = new Blob([csv], { type: 'text/csv;charset=utf-8;' });
-      const url = URL.createObjectURL(blob);
-      const a = document.createElement('a');
-      a.href = url;
-      a.download = 'dodavatele_2024_2025.csv';
-      document.body.appendChild(a); a.click(); document.body.removeChild(a);
-      URL.revokeObjectURL(url);
-    });
-
-    // Reset UI
-    resetBtn.addEventListener('click', () => {
-      fileEl.value = '';
-      resetUI();
-    });
-
-    // ----------------- Render pomocné funkce -----------------
-
-    function renderTable() {
-      tbodyEl.innerHTML = suppliers.map(s => `
-        <tr>
-          <td>${escapeHtml(s.name)}</td>
-          <td style="text-align:right">${fmtCZK.format(s.rev24)}</td>
-          <td style="text-align:right">${fmtInt.format(s.ord24)}</td>
-          <td style="text-align:right">${fmtCZK.format(s.rev25)}</td>
-          <td style="text-align:right">${fmtInt.format(s.ord25)}</td>
-        </tr>
-      `).join('');
-    }
-
-    function renderChart() {
-      const name = selEl.value;
-      if (!name) return;
-      const s = suppliers.find(x => x.name === name);
-      if (!s) return;
-
-      const labels = ['2024', '2025'];
-
-      // Obrat: 2024 tlumeně, 2025 výrazně
-      const dsRevenue = {
-        type: 'bar',
-        label: 'Obrat (Kč)',
-        data: [s.rev24, s.rev25],
-        backgroundColor: [getCSS('--rev24'), getCSS('--rev25')],
-        borderColor: [getCSS('--rev24'), getCSS('--rev25')],
-        borderWidth: [1, 2],
-        yAxisID: 'yRev'
-      };
-
-      // Objednávky: 2024 tlumeně, 2025 výrazně
-      const dsOrders = {
-        type: 'bar',
-        label: 'Objednávky (ks)',
-        data: [s.ord24, s.ord25],
-        backgroundColor: [getCSS('--ord24'), getCSS('--ord25')],
-        borderColor: [getCSS('--ord24'), getCSS('--ord25')],
-        borderWidth: [1, 2],
-        yAxisID: 'yOrd'
-      };
-
-      if (chart) chart.destroy();
-      chart = new Chart(chartCanvas, {
-        data: { labels, datasets: [dsRevenue, dsOrders] },
-        options: {
-          responsive: true,
-          plugins: {
-            legend: { position: 'top' },
-            tooltip: {
-              callbacks: {
-                label: (item) => {
-                  const isRev = item.dataset.label.includes('Obrat');
-                  const v = item.parsed.y;
-                  return isRev ? `${item.dataset.label}: ${fmtCZK.format(v)}`
-                               : `${item.dataset.label}: ${fmtInt.format(v)}`;
-                }
-              }
-            },
-            title: { display: true, text: `Dodavatel: ${name} — srovnání 2024 vs 2025` }
-          },
-          scales: {
-            x: { title: { text: 'Rok', display: true } },
-            yRev: {
-              type: 'linear', position: 'left',
-              title: { display: true, text: 'Obrat (Kč)' },
-              grid: { drawOnChartArea: true }
-            },
-            yOrd: {
-              type: 'linear', position: 'right',
-              title: { display: true, text: 'Objednávky (ks)' },
-              grid: { drawOnChartArea: false }
-            }
-          }
-        }
-      });
-    }
-
-    // ----------------- Utility -----------------
-
-    function detectHeaderStart(rows) {
-      if (!rows.length) return 0;
-      const f = rows[0];
-      // pokud B–E nejsou čísla, pravděpodobně hlavička → přeskočit
-      const looksHeader =
-        f && f.length >= 5 &&
-        (typeof f[1] !== 'number' || typeof f[2] !== 'number' || typeof f[3] !== 'number' || typeof f[4] !== 'number');
-      return looksHeader ? 1 : 0;
-    }
-
-    function toNum(val) {
-      if (typeof val === 'number') return val;
-      if (val == null) return 0;
-      const s = String(val).replace(/[^\d,.\- ]/g, '').replace(/\s+/g, '');
-      // české čárky → tečka
-      const normalized = s.replace(/,/g, '.');
-      const num = parseFloat(normalized);
-      return isNaN(num) ? 0 : num;
-    }
-
-    function escapeHtml(s) {
-      return String(s)
-        .replaceAll('&','&amp;').replaceAll('<','&lt;').replaceAll('>','&gt;')
-        .replaceAll('"','&quot;').replaceAll("'",'&#39;');
-    }
-
-    function getCSS(varName) {
-      return getComputedStyle(document.documentElement).getPropertyValue(varName).trim();
-    }
-
-    function resetUI() {
-      suppliers = [];
-      selEl.innerHTML = '<option value="">— nejprve nahraj soubor —</option>';
-      selEl.disabled = true;
-      tbodyEl.innerHTML = '';
-      tableInfoEl.textContent = '';
-      errorEl.textContent = '';
-      fileInfoEl.textContent = '';
-      if (chart) { chart.destroy(); chart = null; }
-    }
-  </script>
-</body>
-</html>
