@@ -1,4 +1,4 @@
-<p style="color:#0a66c2">Test: stránka se načetla.</p>
+
 <!DOCTYPE html>
 <html lang="cs">
 <head>
@@ -6,7 +6,6 @@
   <meta name="viewport" content="width=device-width, initial-scale=1" />
   <title>Reporty dodavatelů — Lukáš Havel</title>
 
-  <!-- Jednoduché styly -->
   <style>
     :root { color-scheme: light dark; }
     body { font-family: system-ui, -apple-system, "Segoe UI", Roboto, Arial, sans-serif; margin: 24px; line-height: 1.6; }
@@ -24,9 +23,9 @@
     .error { color: #b00020; }
   </style>
 
-  <!-- SheetJS pro načtení Excelu (XLS/XLSX) — CDN -->
-  <script src="vendor/xlsx.full.min.js  <!-- Chart.js pro grafy — CDN -->
-  <script src="vendor/chart.umd.min.j</script>
+  <!-- LOKÁLNÍ KOPIE KNIHOVEN (z tvého repozitáře) -->
+  vendor/xlsx.full.min.js</script>
+  vendor/chart.umd.min.js</script>
 </head>
 <body>
   <header style="margin-bottom:16px">
@@ -100,26 +99,22 @@
   </footer>
 
   <script>
-    // Pomocné formátování čísel
+    // --- Pomocné formátování ---
     const fmtInt = new Intl.NumberFormat('cs-CZ', { maximumFractionDigits: 0 });
     const fmtCZK = new Intl.NumberFormat('cs-CZ', { style: 'currency', currency: 'CZK' });
 
-    // Data držíme v paměti po nahrání souboru
-    let allRows = [];      // každý řádek: { supplier, date: Date, shipments: number, revenue: number }
-    let suppliers = [];    // unikátní názvy
+    // --- Stav ---
+    let allRows = [];   // { supplier, date: Date, shipments: number, revenue: number }
+    let suppliers = [];
+    let chart;          // Chart.js instance
 
-    // Graf (Chart.js instance)
-    let chart;
-
-    // Excel -> Date (když přijde Excel serial číslo)
+    // Excel serial -> Date
     function excelSerialToDate(serial) {
-      // Excel datový serial => UTC date (offset 25569 dní od 1970-01-01)
-      // Funguje pro moderní data, není třeba řešit 1900 leap bug.
       const utcDays = serial - 25569;
       return new Date(utcDays * 86400 * 1000);
     }
 
-    // Parsování nahraného souboru
+    // Nahrání souboru
     document.getElementById('file').addEventListener('change', async (e) => {
       resetUI();
       const file = e.target.files?.[0];
@@ -129,28 +124,24 @@
 
       try {
         const arrayBuffer = await file.arrayBuffer();
-        // SheetJS: přečíst workbook (vč. XLS) — v prohlížeči
         const wb = XLSX.read(arrayBuffer, { type: 'array', cellDates: true });
         const sheetName = wb.SheetNames[0];
         const ws = wb.Sheets[sheetName];
 
-        // Vytáhnout data jako pole řádků (header:1 -> každá řádka je pole hodnot)
+        // Každý řádek jako pole (header:1)
         const rows = XLSX.utils.sheet_to_json(ws, { header: 1, raw: true });
 
-        // Zpracování: A= dodavatel, B= datum, C= zásilky, D= obrat
-        // Detekce hlavičky: pokud první řádek "nevypadá" jako data, přeskočíme jej.
         const startIdx = detectHeaderStart(rows);
 
         allRows = [];
         for (let i = startIdx; i < rows.length; i++) {
           const r = rows[i];
           if (!r || r.length < 4) continue;
-          const supplier = String(r[0]).trim();
+          const supplier = String(r[0] ?? '').trim();
           let dateVal = r[1];
           let shipments = Number(r[2]);
           let revenue = Number(r[3]);
 
-          // Datum může být string nebo excel serial číslo
           let date;
           if (dateVal instanceof Date) {
             date = dateVal;
@@ -160,20 +151,16 @@
             date = new Date(dateVal);
           }
 
-          // Validace minimálně: dodavatel + datum
           if (!supplier || isNaN(date?.getTime())) continue;
 
-          // Opravit NaN na 0
           shipments = isNaN(shipments) ? 0 : shipments;
           revenue = isNaN(revenue) ? 0 : revenue;
 
           allRows.push({ supplier, date, shipments, revenue });
         }
 
-        // Seřadit podle data
         allRows.sort((a, b) => a.date - b.date);
 
-        // Unikátní seznam dodavatelů
         suppliers = Array.from(new Set(allRows.map(r => r.supplier))).sort((a, b) => a.localeCompare(b, 'cs'));
 
         // Naplnit select
@@ -181,15 +168,17 @@
         sel.innerHTML = '<option value="">— vyber —</option>' + suppliers.map(s => `<option value="${escapeHtml(s)}">${escapeHtml(s)}</option>`).join('');
         sel.disabled = suppliers.length === 0;
 
-        document.getElementById('tableInfo').textContent = `Načteno řádků: ${fmtInt.format(allRows.length)} · Dodavatelů: ${fmtInt.format(suppliers.length)} · List: ${sheetName}`;
+        document.getElementById('tableInfo').textContent =
+          `Načteno řádků: ${fmtInt.format(allRows.length)} · Dodavatelů: ${fmtInt.format(suppliers.length)} · List: ${sheetName}`;
 
       } catch (err) {
         console.error(err);
-        document.getElementById('error').textContent = 'Nepodařilo se načíst soubor. Zkontroluj, že jde o XLS/XLSX s požadovanými sloupci.';
+        document.getElementById('error').textContent =
+          'Nepodařilo se načíst soubor. Zkontroluj, že jde o XLS/XLSX s požadovanými sloupci (A–D).';
       }
     });
 
-    // Po změně dodavatele nebo metriky vykreslit tabulku a graf
+    // Události UI
     document.getElementById('supplier').addEventListener('change', renderView);
     document.getElementById('metric').addEventListener('change', renderView);
 
@@ -197,7 +186,6 @@
       const supplier = document.getElementById('supplier').value;
       if (!supplier) return;
 
-      // Filtrovaná data dodavatele
       const rows = allRows.filter(r => r.supplier === supplier);
 
       // Tabulka
@@ -211,13 +199,12 @@
         </tr>
       `).join('');
 
-      // Součty
       const sumShipments = rows.reduce((acc, r) => acc + r.shipments, 0);
       const sumRevenue = rows.reduce((acc, r) => acc + r.revenue, 0);
       document.getElementById('sumShipments').textContent = fmtInt.format(sumShipments);
       document.getElementById('sumRevenue').textContent = fmtCZK.format(sumRevenue);
 
-      // Agregace po dnech (stejné datum -> součet)
+      // Agregace po dnech
       const byDateMap = new Map(); // key: YYYY-MM-DD
       for (const r of rows) {
         const d = toISO(r.date);
@@ -230,7 +217,7 @@
       const seriesShip = labels.map(d => byDateMap.get(d).shipments);
       const seriesRev = labels.map(d => byDateMap.get(d).revenue);
 
-      // Graf
+      // Datové sady podle výběru
       const metric = document.getElementById('metric').value;
       const datasets = [];
       if (metric === 'both' || metric === 'shipments') {
@@ -294,21 +281,18 @@
       });
     }
 
-    // Detekce přítomnosti hlavičky v prvním řádku
+    // Detekce hlavičky (první řádek)
     function detectHeaderStart(rows) {
       if (!rows.length) return 0;
       const first = rows[0];
-      // Pokud třetí/čtvrtý sloupec nejsou čísla, pravděpodobně jde o hlavičku
       const looksHeader =
-        first &&
-        first.length >= 4 &&
+        first && first.length >= 4 &&
         (typeof first[2] !== 'number' || typeof first[3] !== 'number');
       return looksHeader ? 1 : 0;
     }
 
     // Pomocné funkce
     function toISO(d) {
-      // YYYY-MM-DD
       const yyyy = d.getFullYear();
       const mm = String(d.getMonth() + 1).padStart(2, '0');
       const dd = String(d.getDate()).padStart(2, '0');
@@ -336,5 +320,3 @@
   </script>
 </body>
 </html>
-
-
