@@ -1,22 +1,3 @@
 
-<!DOCTYPE html>
-<html lang="cs">
-<head>
-  <meta charset="UTF-8" />
-  <title>Test skeleton</title>
-</head>
-<body>
-  <h1>Funguje HTML</h1>
-  <p id="lib-status">Načítám knihovny…</p>
-
-  <!-- Odkazy na lokální knihovny (musí existovat v web/vendor/) -->
-  vendor/xlsx.full.min.js</script>
-  vendor/chart.umd.min.js</script>
-
-  <script>
-    // Zobrazíme, jestli se knihovny načetly
-    document.getElementById('lib-status').textContent =
-      'XLSX: ' + (typeof XLSX) + ' · Chart: ' + (typeof Chart);
-  </script>
-</body>
-</html>
+<!-- MÍSTO relativních cest 'vendor/...' použij absolutní z kořene webu -->
+<script src="/web/vendor/xlsx.full.min.jsb/vendor/chart.umd.min.js</script>
