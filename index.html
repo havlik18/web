@@ -142,34 +142,54 @@
     </main>
   </div>
 
-  <!-- === KNIHOVNY: lokálně + fallback injekce na CDN === -->
-  /web/vendor/xlsx.full.min.js</script>
-  /web/vendor/chart.umd.min.js</script>
-
+  <!-- ========== KNIHOVNY (Chart.js z CDN primárně) ========== -->
+  <!-- 1) Chart.js z CDN jako primární -->
+  https://unpkg.com/chart.js@4.4.1/dist/chart.umd.min.js</script>
+  <!-- 1b) Fallback na místní, kdyby CDN neprošla -->
   <script>
-    // Fallback s Promise: dotáhne knihovny z CDN, když lokální nejsou/načtou se pomalu.
-    function ensureLibs(){
-      return new Promise(function(resolve){
-        function inject(src, cb){
-          var s = document.createElement('script');
-          s.src = src;
-          s.onload = cb;
-          s.onerror = cb;
-          document.head.appendChild(s);
-        }
-        var needX = (typeof window.XLSX === 'undefined');
-        var needC = (typeof window.Chart === 'undefined');
-        var wait = 0;
-        function done(){ if(--wait <= 0) resolve(); }
+    (function(){
+      if (typeof window.Chart === 'undefined') {
+        var s = document.createElement('script');
+        s.src = '/web/vendor/chart.umd.min.js';
+        s.onload = function(){ console.warn('Chart.js načten lokálně.'); };
+        s.onerror = function(){ console.error('Chart.js se nepodařilo načíst ani z CDN, ani lokálně.'); };
+        document.head.appendChild(s);
+      }
+    })();
+  </script>
 
-        if (needX){ wait++; inject('https://unpkg.com/xlsx@0.18.5/dist/xlsx.full.min.js', done); }
-        if (needC){ wait++; inject('https://unpkg.com/chart.js@4.4.1/dist/chart.umd.min.js', done); }
-        if (!needX && !needC) resolve();
+  <!-- 2) SheetJS (lokálně) -->
+  /web/vendor/xlsx.full.min.js</script>
+  <!-- 2b) Fallback na CDN -->
+  <script>
+    (function(){
+      if (typeof window.XLSX === 'undefined') {
+        var s = document.createElement('script');
+        s.src = 'https://unpkg.com/xlsx@0.18.5/dist/xlsx.full.min.js';
+        s.onload = function(){ console.warn('XLSX načten z CDN.'); };
+        s.onerror = function(){ console.error('XLSX se nepodařilo načíst.'); };
+        document.head.appendChild(s);
+      }
+    })();
+  </script>
+
+  <!-- Pomocné: čekání, než je knihovna opravdu dostupná -->
+  <script>
+    function waitFor(testFn, {interval=50, timeout=5000} = {}){
+      return new Promise(function(resolve, reject){
+        var start = Date.now();
+        (function tick(){
+          try{
+            if (testFn()) return resolve(true);
+          }catch(e){}
+          if (Date.now() - start > timeout) return reject(new Error('Timeout při čekání na knihovnu'));
+          setTimeout(tick, interval);
+        })();
       });
     }
   </script>
 
-  <!-- === HLAVNÍ LOGIKA: vše v globálu (window.*) === -->
+  <!-- ========== HLAVNÍ LOGIKA (window.*) ========== -->
   <script>
     // Formátování
     var fmtInt = new Intl.NumberFormat('cs-CZ', { maximumFractionDigits: 0 });
@@ -194,22 +214,46 @@
     var kpiOrdVal   = document.getElementById('kpiOrdVal');
     var kpiOrdDelta = document.getElementById('kpiOrdDelta');
 
-    document.getElementById('libStatus').textContent =
-      'XLSX: ' + (typeof window.XLSX) + ' · Chart: ' + (typeof window.Chart);
+    // Zobraz, odkud se knihovny vzaly
+    (function showLibs(){
+      var srcInfo = [];
+      // zjistit aktuální <script> pro Chart
+      var scripts = document.getElementsByTagName('script');
+      var chartSrc = 'unknown';
+      for (var i=0;i<scripts.length;i++){
+        if (scripts[i].src && scripts[i].src.indexOf('chart') !== -1) { chartSrc = scripts[i].src; break; }
+      }
+      var xlsxSrc = 'unknown';
+      for (var j=0;j<scripts.length;j++){
+        if (scripts[j].src && scripts[j].src.indexOf('xlsx') !== -1) { xlsxSrc = scripts[j].src; break; }
+      }
+      document.getElementById('libStatus').textContent =
+        'XLSX: ' + (typeof window.XLSX) + ' · Chart: ' + (typeof window.Chart) +
+        ' · Source: ' + (chartSrc || 'n/a');
+    })();
 
-    // Auto načtení po výběru souboru (stejný postup jako tlačítko)
+    // Auto načtení po výběru souboru
     fileEl.addEventListener('change', function(){ window.loadSelectedFile(); });
 
-    // === GLOBÁLNÍ (window.*) FUNKCE ===
+    // Globální funkce
     window.loadSelectedFile = function(){
       var f = fileEl.files && fileEl.files[0] ? fileEl.files[0] : null;
       if (!f){ statusEl.textContent = 'Stav: nejprve vyber soubor .xls/.xlsx'; return; }
       fileInfoEl.textContent = 'Soubor: ' + f.name + ' (' + fmtInt.format(f.size) + ' B)';
       statusEl.textContent = 'Stav: ověřuji knihovny…';
-      ensureLibs().then(function(){
+
+      // Počkej, až budou XLSX + Chart opravdu připravené
+      Promise.all([
+        waitFor(function(){ return typeof window.XLSX !== 'undefined'; }, {timeout: 8000}),
+        waitFor(function(){ return typeof window.Chart !== 'undefined'; }, {timeout: 8000})
+      ]).then(function(){
         document.getElementById('libStatus').textContent =
           'XLSX: ' + (typeof window.XLSX) + ' · Chart: ' + (typeof window.Chart);
         window.processFile(f);
+      }).catch(function(e){
+        errorEl.textContent = 'Knihovny se nenačetly včas. Zkus obnovit stránku (?v=40) nebo prověř síť.';
+        statusEl.textContent = 'Stav: chyba.';
+        console.error(e);
       });
     };
 
@@ -241,72 +285,7 @@
               suppliers.push({ name:name, rev24:rev24, ord24:ord24, rev25:rev25, ord25:ord25 });
             }
 
-            window.renderTable();
-
-            selEl.innerHTML = '<option value="">— vyber —</option>' +
-              suppliers.map(function(s){ return '<option value="'+window.escapeHtml(s.name)+'">'+window.escapeHtml(s.name)+'</option>'; }).join('');
-            selEl.disabled = suppliers.length === 0;
-
-            tableInfoEl.textContent = 'Načteno dodavatelů: ' + fmtInt.format(suppliers.length) + ' · List: ' + sheetName;
-            statusEl.textContent = suppliers.length ? 'Stav: hotovo.' : 'Stav: hotovo, ale bez dat (zkontroluj sloupce A–E).';
-
-            if (suppliers.length){
-              selEl.value = suppliers[0].name;
-              window.renderChartAndKPI();
-            }
-          }catch(err){
-            errorEl.textContent = 'Chyba při zpracování souboru: ' + err.message;
-            statusEl.textContent = 'Stav: chyba.';
-          }
-        };
-        reader.onerror = function(){ errorEl.textContent='Chyba čtení souboru (FileReader).'; statusEl.textContent='Stav: chyba.'; };
-        reader.readAsArrayBuffer(file);
-      }catch(err){
-        errorEl.textContent = 'Chyba: ' + err.message;
-        statusEl.textContent = 'Stav: chyba.';
-      }
-    };
-
-    window.renderTable = function(){
-      var html = '';
-      for (var i = 0; i < suppliers.length; i++){
-        var s = suppliers[i];
-        html += '<tr>' +
-          '<td>' + window.escapeHtml(s.name) + '</td>' +
-          '<td style="text-align:right">' + fmtCZK.format(s.rev24) + '</td>' +
-          '<td style="text-align:right">' + fmtInt.format(s.ord24) + '</td>' +
-          '<td style="text-align:right">' + fmtCZK.format(s.rev25) + '</td>' +
-          '<td style="text-align:right">' + fmtInt.format(s.ord25) + '</td>' +
-        '</tr>';
-      }
-      tbodyEl.innerHTML = html;
-    };
-
-    // ✅ Opraveno: nejdřív ensureLibs(), teprve pak kreslit graf
-    window.renderChartAndKPI = function(){
-      var name = selEl.value;
-      if (!name) return;
-
-      ensureLibs().then(function(){
-        var s = null;
-        for (var i = 0; i < suppliers.length; i++){
-          if (suppliers[i].name === name) { s = suppliers[i]; break; }
-        }
-        if (!s) return;
-
-        if (typeof Chart === 'undefined'){
-          errorEl.textContent = 'Chart.js není načtená — zkontroluj /web/vendor/chart.umd.min.js (nebo síť)';
-          return;
-        }
-
-        var labels = ['2024','2025'];
-        var dsObrat24 = { type:'bar', label:'Obrat 2024', data:[s.rev24, null],
-          backgroundColor:window.getCSS('--rev24'), borderColor:window.getCSS('--rev24'), borderWidth:1, yAxisID:'yRev' };
-        var dsObrat25 = { type:'bar', label:'Obrat 2025', data:[null, s.rev25],
-          backgroundColor:window.getCSS('--rev25'), borderColor:window.getCSS('--rev25'), borderWidth:2, yAxisID:'yRev' };
-        var dsObj24   = { type:'bar', label:'Objednávky 2024', data:[s.ord24, null],
-          backgroundColor:window.getCSS('--ord24'), borderColor:window.getCSS('--ord24'), borderWidth:1, yAxisID:'yOrd' };
-        var dsObj25   = { type:'bar', label:'Objednávky 2025', data:[null, s.ord25],
+           pe:'bar', label:'Objednávky 2025', data:[null, s.ord25],
           backgroundColor:window.getCSS('--ord25'), borderColor:window.getCSS('--ord25'), borderWidth:2, yAxisID:'yOrd' };
 
         if (chart) chart.destroy();
@@ -355,6 +334,9 @@
         kpiRevDelta.className = 'delta ' + (dRev >= 0 ? 'up' : 'down');
         kpiOrdDelta.className = 'delta ' + (dOrd >= 0 ? 'up' : 'down');
         kpiBox.hidden = false;
+      })
+      .catch(function(){
+        errorEl.textContent = 'Chart.js se nenačetla ani po čekání — zkontroluj síť/rozšíření prohlížeče.';
       });
     };
 
@@ -383,7 +365,7 @@
     window.toNum = function(val){
       if (typeof val === 'number') return val;
       if (val == null) return 0;
-      var s = String(val).replace(/[^\d,.\- ]/g,'').replace(/\s+/g,''); // odstraní „Kč“, mezery
+      var s = String(val).replace(/[^\d,.\- ]/g,'').replace(/\s+/g,''); /* „Kč“, mezery */
       s = s.replace(/,/g,'.');
       var n = parseFloat(s);
       return isNaN(n) ? 0 : n;
@@ -395,7 +377,7 @@
     window.getCSS = function(varName){
       return getComputedStyle(document.documentElement).getPropertyValue(varName).trim();
     };
-    window.clearMessages = function(){ errorEl.textContent=''; /* ponecháme status */ };
+    window.clearMessages = function(){ errorEl.textContent=''; /* status ponecháme */ };
     window.resetUI = function(){
       suppliers = [];
       selEl.innerHTML = '<option value="">— nejprve nahraj soubor —</option>';
