@@ -36,7 +36,6 @@
     .card h2{margin:0 0 10px;font-size:clamp(18px,2.2vw,22px)}
     label{font-weight:600;display:block;margin-bottom:6px}
 
-    /* ovládací prvky */
     select,input[type="file"]{width:100%;max-width:100%;box-sizing:border-box;padding:10px 12px;
       border-radius:10px;border:1px solid var(--border);background:#fff}
     input[type="file"]{appearance:auto}
@@ -51,7 +50,6 @@
       background:#fff;cursor:pointer;white-space:nowrap}
     .btn-primary{background:var(--primary);color:#fff;border-color:var(--primary)}
 
-    /* tabulka */
     table{width:100%;border-collapse:collapse;margin-top:10px;table-layout:auto}
     thead th{background:rgba(21,101,192,.12);padding:8px 10px;border-bottom:1px solid var(--border)}
     tbody td,tfoot td{border-top:1px solid var(--border);padding:8px 10px;font-size:14px;word-break:break-word}
@@ -62,7 +60,6 @@
     .error{color:#b00020}
     .status{font-size:13px;padding:8px 10px;border:1px dashed var(--border);border-radius:10px;background:rgba(0,0,0,.03)}
 
-    /* KPI box */
     .kpis{display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-top:10px}
     @media(max-width:520px){.kpis{grid-template-columns:1fr}}
     .kpi{background:var(--kpiBg);border:1px solid var(--border);border-radius:12px;padding:10px}
@@ -90,10 +87,9 @@
           <input type="file" id="file" accept=".xlsx,.xls" />
         </div>
         <div style="margin-top:8px;display:flex;gap:8px;flex-wrap:wrap">
-          <!-- INLINE HANDLER: spustí se vždy -->
           <button class="btn btn-primary" onclick="loadSelectedFile()">Načíst soubor</button>
           <button class="btn" onclick="resetUI()">Reset</button>
-          <button id="exportBtn" class="btn">Export CSV (tabulka)</button>
+          <button class="btn" onclick="exportCSV()">Export CSV (tabulka)</button>
         </div>
 
         <div id="fileInfo" class="muted" style="margin-top:6px"></div>
@@ -146,54 +142,41 @@
     </main>
   </div>
 
-  <!-- === KNIHOVNY: lokálně + fallback injekce na CDN === -->
+  <!-- Lokální knihovny -->
   /web/vendor/xlsx.full.min.js</script>
   /web/vendor/chart.umd.min.js</script>
 
+  <!-- Fallback injekce na CDN + promisový „ensureLibs“ -->
   <script>
-    // Fallback injekce s Promise: zajistí, že XLSX/Chart jsou k dispozici, jinak dotáhne z CDN a počká:
-    function ensureLibs() {
+    function ensureLibs(){
       return new Promise(function(resolve){
+        function inject(src, cb){
+          var s=document.createElement('script'); s.src=src;
+          s.onload=cb; s.onerror=cb; document.head.appendChild(s);
+        }
         var needX = (typeof window.XLSX === 'undefined');
         var needC = (typeof window.Chart === 'undefined');
-        var toLoad = 0;
+        var wait  = 0;
+        function done(){ if(--wait<=0) resolve(); }
 
-        function inject(src, onload){
-          var s = document.createElement('script');
-          s.src = src;
-          s.onload = onload;
-          s.onerror = function(){ console.warn('Nelze načíst skript:', src); onload(); };
-          document.head.appendChild(s);
-        }
-
-        function doneOne(){
-          toLoad--;
-          if (toLoad <= 0) resolve();
-        }
-
-        if (needX) {
-          toLoad++;
-          console.warn('XLSX lokálně nenačten — přepínám na CDN');
-          inject('https://unpkg.com/xlsx@0.18.5/dist/xlsx.full.min.js', doneOne);
-        }
-        if (needC) {
-          toLoad++;
-          console.warn('Chart.js lokálně nenačten — přepínám na CDN');
-          inject('https://unpkg.com/chart.js@4.4.1/dist/chart.umd.min.js', doneOne);
-        }
+        if (needX){ wait++; console.warn('XLSX lokálně nenačten — CD N'); inject('https://unpkg.com/xlsx@0.18.5/dist/xlsx.full.min.js', done); }
+        if (needC){ wait++; console.warn('Chart.js lokálně nenačten — CDN'); inject('https://unpkg.com/chart.js@4.4.1/dist/chart.umd.min.js', done); }
         if (!needX && !needC) resolve();
       });
     }
   </script>
 
-  <!-- === HLAVNÍ LOGIKA: načítání XLSX, tabulka, graf, KPI === -->
+  <!-- Hlavní logika – VŠE v globálním scope (window.*) -->
   <script>
+    // Formátování
     var fmtInt = new Intl.NumberFormat('cs-CZ', { maximumFractionDigits: 0 });
     var fmtCZK = new Intl.NumberFormat('cs-CZ', { style: 'currency', currency: 'CZK' });
 
+    // Stav
     var suppliers = []; // { name, rev24, ord24, rev25, ord25 }
     var chart = null;
 
+    // DOM
     var fileEl      = document.getElementById('file');
     var fileInfoEl  = document.getElementById('fileInfo');
     var statusEl    = document.getElementById('status');
@@ -202,44 +185,38 @@
     var tableInfoEl = document.getElementById('tableInfo');
     var tbodyEl     = document.querySelector('#table tbody');
     var chartCanvas = document.getElementById('chart');
-
     var kpiBox      = document.getElementById('kpiBox');
     var kpiRevVal   = document.getElementById('kpiRevVal');
     var kpiRevDelta = document.getElementById('kpiRevDelta');
     var kpiOrdVal   = document.getElementById('kpiOrdVal');
     var kpiOrdDelta = document.getElementById('kpiOrdDelta');
 
-    // Info o knihovnách (rychlý pohled)
     document.getElementById('libStatus').textContent =
       'XLSX: ' + (typeof window.XLSX) + ' · Chart: ' + (typeof window.Chart);
 
-    // Auto zpracování po výběru souboru
-    fileEl.addEventListener('change', function(e){
-      var f = e.target.files && e.target.files[0] ? e.target.files[0] : null;
-      if (!f) { statusEl.textContent = 'Stav: žádný soubor nevybrán'; return; }
-      fileInfoEl.textContent = 'Soubor: ' + f.name + ' (' + fmtInt.format(f.size) + ' B)';
-      loadSelectedFile(); // použijeme stejný postup jako u tlačítka
+    // Auto načtení po výběru souboru
+    fileEl.addEventListener('change', function(){
+      window.loadSelectedFile();
     });
 
-    // Ruční spouštěč
-    function loadSelectedFile(){
+    // === GLOBÁLNÍ FUNKCE (řeší „is not defined“) ===
+    window.loadSelectedFile = function(){
       var f = fileEl.files && fileEl.files[0] ? fileEl.files[0] : null;
-      if (!f) { statusEl.textContent = 'Stav: nejprve vyber soubor .xls/.xlsx'; return; }
+      if (!f){ statusEl.textContent = 'Stav: nejprve vyber soubor .xls/.xlsx'; return; }
+      fileInfoEl.textContent = 'Soubor: ' + f.name + ' (' + fmtInt.format(f.size) + ' B)';
       statusEl.textContent = 'Stav: ověřuji knihovny…';
-      // Zajisti dostupnost knihoven (lokální nebo CDN), teprve pak pracuj s XLSX
       ensureLibs().then(function(){
-        // Aktualizuj info o knihovnách
         document.getElementById('libStatus').textContent =
           'XLSX: ' + (typeof window.XLSX) + ' · Chart: ' + (typeof window.Chart);
-        processFile(f);
+        window.processFile(f);
       });
-    }
+    };
 
-    function processFile(file){
-      clearMessages();
+    window.processFile = function(file){
+      window.clearMessages();
       statusEl.textContent = 'Stav: načítám a zpracovávám…';
       try{
-        if (typeof XLSX === 'undefined') { throw new Error('Knihovna XLSX není načtená'); }
+        if (typeof XLSX === 'undefined') throw new Error('Knihovna XLSX není načtená');
 
         var reader = new FileReader();
         reader.onload = function(ev){
@@ -250,52 +227,61 @@
             var rows = XLSX.utils.sheet_to_json(ws, { header: 1, raw: true });
 
             suppliers = [];
-            var startIdx = detectHeaderStart(rows);
+            var startIdx = window.detectHeaderStart(rows);
             for (var i = startIdx; i < rows.length; i++){
               var r = rows[i];
               if (!r || r.length < 5) continue;
               var name  = String(r[0] || '').trim();
-              var rev24 = toNum(r[1]);
-              var ord24 = toNum(r[2]);
-              var rev25 = toNum(r[3]);
-              var ord25 = toNum(r[4]);
+              var rev24 = window.toNum(r[1]);
+              var ord24 = window.toNum(r[2]);
+              var rev25 = window.toNum(r[3]);
+              var ord25 = window.toNum(r[4]);
               if (!name) continue;
               suppliers.push({ name:name, rev24:rev24, ord24:ord24, rev25:rev25, ord25:ord25 });
             }
 
-            renderTable();
+            window.renderTable();
 
-            // Naplnit select
             selEl.innerHTML = '<option value="">— vyber —</option>' +
-              suppliers.map(function(s){ return '<option value="'+escapeHtml(s.name)+'">'+escapeHtml(s.name)+'</option>'; }).join('');
+              suppliers.map(function(s){ return '<option value="'+window.escapeHtml(s.name)+'">'+window.escapeHtml(s.name)+'</option>'; }).join('');
             selEl.disabled = suppliers.length === 0;
 
             tableInfoEl.textContent = 'Načteno dodavatelů: ' + fmtInt.format(suppliers.length) + ' · List: ' + sheetName;
             statusEl.textContent = suppliers.length ? 'Stav: hotovo.' : 'Stav: hotovo, ale bez dat (zkontroluj sloupce A–E).';
 
-            // Auto‑zobrazení prvního dodavatele
             if (suppliers.length){
               selEl.value = suppliers[0].name;
-              renderChartAndKPI();
+              window.renderChartAndKPI();
             }
           }catch(err){
             errorEl.textContent = 'Chyba při zpracování souboru: ' + err.message;
             statusEl.textContent = 'Stav: chyba.';
           }
         };
-        reader.onerror = function(){
-          errorEl.textContent = 'Chyba čtení souboru (FileReader).';
-          statusEl.textContent = 'Stav: chyba.';
-        };
+        reader.onerror = function(){ errorEl.textContent='Chyba čtení souboru (FileReader).'; statusEl.textContent='Stav: chyba.'; };
         reader.readAsArrayBuffer(file);
       }catch(err){
         errorEl.textContent = 'Chyba: ' + err.message;
         statusEl.textContent = 'Stav: chyba.';
       }
-    }
+    };
 
-    // Reakce na změnu dodavatele
-    function renderChartAndKPI(){
+    window.renderTable = function(){
+      var html = '';
+      for (var i = 0; i < suppliers.length; i++){
+        var s = suppliers[i];
+        html += '<tr>' +
+          '<td>' + window.escapeHtml(s.name) + '</td>' +
+          '<td style="text-align:right">' + fmtCZK.format(s.rev24) + '</td>' +
+          '<td style="text-align:right">' + fmtInt.format(s.ord24) + '</td>' +
+          '<td style="text-align:right">' + fmtCZK.format(s.rev25) + '</td>' +
+          '<td style="text-align:right">' + fmtInt.format(s.ord25) + '</td>' +
+        '</tr>';
+      }
+      tbodyEl.innerHTML = html;
+    };
+
+    window.renderChartAndKPI = function(){
       var name = selEl.value;
       if (!name) return;
       var s = null;
@@ -307,16 +293,15 @@
         return;
       }
 
-      // Varianta B: 4 položky v legendě (metrika + rok), 2025 zvýrazněn
       var labels = ['2024','2025'];
       var dsObrat24 = { type:'bar', label:'Obrat 2024', data:[s.rev24, null],
-        backgroundColor:getCSS('--rev24'), borderColor:getCSS('--rev24'), borderWidth:1, yAxisID:'yRev' };
+        backgroundColor:window.getCSS('--rev24'), borderColor:window.getCSS('--rev24'), borderWidth:1, yAxisID:'yRev' };
       var dsObrat25 = { type:'bar', label:'Obrat 2025', data:[null, s.rev25],
-        backgroundColor:getCSS('--rev25'), borderColor:getCSS('--rev25'), borderWidth:2, yAxisID:'yRev' };
+        backgroundColor:window.getCSS('--rev25'), borderColor:window.getCSS('--rev25'), borderWidth:2, yAxisID:'yRev' };
       var dsObj24   = { type:'bar', label:'Objednávky 2024', data:[s.ord24, null],
-        backgroundColor:getCSS('--ord24'), borderColor:getCSS('--ord24'), borderWidth:1, yAxisID:'yOrd' };
+        backgroundColor:window.getCSS('--ord24'), borderColor:window.getCSS('--ord24'), borderWidth:1, yAxisID:'yOrd' };
       var dsObj25   = { type:'bar', label:'Objednávky 2025', data:[null, s.ord25],
-        backgroundColor:getCSS('--ord25'), borderColor:getCSS('--ord25'), borderWidth:2, yAxisID:'yOrd' };
+        backgroundColor:window.getCSS('--ord25'), borderColor:window.getCSS('--ord25'), borderWidth:2, yAxisID:'yOrd' };
 
       if (chart) chart.destroy();
       chart = new Chart(chartCanvas, {
@@ -345,30 +330,28 @@
         }
       });
 
-      // KPI (meziroční rozdíly 2025 vs 2024)
       var dRev = s.rev25 - s.rev24;
       var dOrd = s.ord25 - s.ord24;
       var pRev = s.rev24 ? (dRev / s.rev24 * 100) : null;
       var pOrd = s.ord24 ? (dOrd / s.ord24 * 100) : null;
 
-      kpiRevVal.textContent = fmtCZK.format(s.rev25) + ' vs ' + fmtCZK.format(s.rev24);
-      kpiOrdVal.textContent = fmtInt.format(s.ord25) + ' ks vs ' + fmtInt.format(s.ord24) + ' ks';
+      document.getElementById('kpiRevVal').textContent = fmtCZK.format(s.rev25) + ' vs ' + fmtCZK.format(s.rev24);
+      document.getElementById('kpiOrdVal').textContent = fmtInt.format(s.ord25) + ' ks vs ' + fmtInt.format(s.ord24) + ' ks';
 
-      kpiRevDelta.textContent = pRev == null
-        ? ('Δ ' + fmtCZK.format(dRev))
-        : ('Δ ' + fmtCZK.format(dRev) + '  (' + (pRev >= 0 ? '+' : '') + pRev.toFixed(1) + '%)');
-      kpiOrdDelta.textContent = pOrd == null
-        ? ('Δ ' + fmtInt.format(dOrd) + ' ks')
-        : ('Δ ' + fmtInt.format(dOrd) + ' ks  (' + (pOrd >= 0 ? '+' : '') + pOrd.toFixed(1) + '%)');
+      var revDelta = (pRev == null) ? ('Δ ' + fmtCZK.format(dRev))
+                                    : ('Δ ' + fmtCZK.format(dRev) + '  (' + (pRev>=0?'+':'') + pRev.toFixed(1) + '%)');
+      var ordDelta = (pOrd == null) ? ('Δ ' + fmtInt.format(dOrd) + ' ks')
+                                    : ('Δ ' + fmtInt.format(dOrd) + ' ks  (' + (pOrd>=0?'+':'') + pOrd.toFixed(1) + '%)');
 
+      kpiRevDelta.textContent = revDelta;
+      kpiOrdDelta.textContent = ordDelta;
       kpiRevDelta.className = 'delta ' + (dRev >= 0 ? 'up' : 'down');
       kpiOrdDelta.className = 'delta ' + (dOrd >= 0 ? 'up' : 'down');
       kpiBox.hidden = false;
-    }
+    };
 
-    // Export CSV tabulky
-    document.getElementById('exportBtn').addEventListener('click', function(){
-      if (!suppliers.length) { alert('Tabulka je prázdná.'); return; }
+    window.exportCSV = function(){
+      if (!suppliers.length){ alert('Tabulka je prázdná.'); return; }
       var header = ['Dodavatel','Obrat 2024','Objednávky 2024','Obrat 2025','Objednávky 2025'];
       var out = [header.join(',')];
       for (var i = 0; i < suppliers.length; i++) {
@@ -377,33 +360,35 @@
       }
       var blob = new Blob([out.join('\n')], { type:'text/csv;charset=utf-8;' });
       var url = URL.createObjectURL(blob);
-      var a = document.createElement('a'); a.href = url; a.download = 'dodavatele_2024_2025.csv';
+      var a = document.createElement('a'); a.href=url; a.download='dodavatele_2024_2025.csv';
       document.body.appendChild(a); a.click(); document.body.removeChild(a); URL.revokeObjectURL(url);
-    });
+    };
 
-    // Utility
-    function detectHeaderStart(rows){
+    // Utility (globálně)
+    window.detectHeaderStart = function(rows){
       if (!rows || !rows.length) return 0;
       var f = rows[0];
       var looksHeader = f && f.length >= 5 &&
         (typeof f[1] !== 'number' || typeof f[2] !== 'number' || typeof f[3] !== 'number' || typeof f[4] !== 'number');
       return looksHeader ? 1 : 0;
-    }
-    function toNum(val){
+    };
+    window.toNum = function(val){
       if (typeof val === 'number') return val;
-      if (val === null || val === undefined) return 0;
-      var s = String(val).replace(/[^\d,.\- ]/g,'').replace(/\s+/g,''); // odstraní „Kč“, mezery
+      if (val == null) return 0;
+      var s = String(val).replace(/[^\d,.\- ]/g,'').replace(/\s+/g,'');
       s = s.replace(/,/g,'.');
-      var num = parseFloat(s);
-      return isNaN(num) ? 0 : num;
-    }
-    function escapeHtml(s){
+      var n = parseFloat(s);
+      return isNaN(n) ? 0 : n;
+    };
+    window.escapeHtml = function(s){
       return String(s).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;')
                       .replace(/"/g,'&quot;').replace(/'/g,'&#39;');
-    }
-    function getCSS(varName){ return getComputedStyle(document.documentElement).getPropertyValue(varName).trim(); }
-    function clearMessages(){ errorEl.textContent=''; /*status ponecháme*/ }
-    function resetUI(){
+    };
+    window.getCSS = function(varName){
+      return getComputedStyle(document.documentElement).getPropertyValue(varName).trim();
+    };
+    window.clearMessages = function(){ errorEl.textContent=''; /* ponecháme status */ };
+    window.resetUI = function(){
       suppliers = [];
       selEl.innerHTML = '<option value="">— nejprve nahraj soubor —</option>';
       selEl.disabled = true;
@@ -414,7 +399,7 @@
       statusEl.textContent = 'Stav: připraveno (čekám na soubor)…';
       kpiBox.hidden = true;
       if (chart) { chart.destroy(); chart = null; }
-    }
+    };
   </script>
 </body>
 </html>
